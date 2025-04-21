@@ -7,13 +7,12 @@ import jakarta.servlet.http.Part;
 
 public class FileUtil {
 
-    private static final String UPLOAD_DIR = "uploads";
+    private static final String UPLOAD_DIR = "/opt/tomcat/apache-tomcat-10.1.18/webapps/uploads/sskm0116";
 
     // 파일 업로드 메소드
     public static String uploadFile(HttpServletRequest request, String paramName, String subDir) {
         try {
-            String applicationPath = request.getServletContext().getRealPath("");
-            String uploadPath = applicationPath + File.separator + UPLOAD_DIR;
+            String uploadPath = UPLOAD_DIR;
 
             if (subDir != null && !subDir.isEmpty()) {
                 uploadPath = uploadPath + File.separator + subDir;
@@ -35,7 +34,7 @@ public class FileUtil {
 
                         filePart.write(filePath);
 
-                        return UPLOAD_DIR + "/" + (subDir != null ? subDir + "/" : "") + originalFileName;
+                        return "uploads/sskm0116/" + (subDir != null ? subDir + "/" : "") + originalFileName;
                     }
                 }
             }
@@ -65,8 +64,9 @@ public class FileUtil {
     public static boolean deleteFile(HttpServletRequest request, String filePath) {
         if (filePath != null && !filePath.isEmpty()) {
             try {
-                String applicationPath = request.getServletContext().getRealPath("/");
-                File file = new File(applicationPath, filePath.replace("/", File.separator));
+                // 수정된 경로 사용
+                String fullPath = UPLOAD_DIR + File.separator + filePath.replace("uploads/sskm0116/", "").replace("/", File.separator);
+                File file = new File(fullPath);
                 if (file.exists()) {
                     return file.delete();
                 }
