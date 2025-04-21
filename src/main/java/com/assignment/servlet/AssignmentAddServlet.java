@@ -61,15 +61,41 @@ public class AssignmentAddServlet extends HttpServlet {
             int assignmentId = assignmentDAO.addAssignmentAndGetId(courseId, title, description, dueDate, null, null);
 
             if (assignmentId > 0) {
+                // 파일 시스템 테스트 - 간단한 테스트 파일 생성
+                boolean testFileCreated = FileUtil.saveTestFile("Assignment ID: " + assignmentId + "\nTitle: " + title);
+                System.out.println("테스트 파일 생성 결과: " + (testFileCreated ? "성공" : "실패"));
+                
                 // 첨부파일 처리
                 Collection<Part> fileParts = FileUtil.getFileParts(request, "files");
                 
+                // 파일 파트 정보 출력
+                System.out.println("====== 파일 업로드 디버그 정보 ======");
+                System.out.println("요청 Content-Type: " + request.getContentType());
+                System.out.println("파일 파트 개수: " + (fileParts != null ? fileParts.size() : 0));
+                
                 if (fileParts != null && !fileParts.isEmpty()) {
+                    // 파일 파트 상세 정보 출력
+                    int fileIndex = 0;
+                    for (Part part : fileParts) {
+                        fileIndex++;
+                        System.out.println("파일 #" + fileIndex + " 정보:");
+                        System.out.println("- 이름: " + part.getName());
+                        System.out.println("- 크기: " + part.getSize() + " bytes");
+                        System.out.println("- 제출된 파일명: " + part.getSubmittedFileName());
+                        System.out.println("- Content-Type: " + part.getContentType());
+                        System.out.println("- Headers: ");
+                        for (String headerName : part.getHeaderNames()) {
+                            System.out.println("  " + headerName + ": " + part.getHeader(headerName));
+                        }
+                    }
+                    
                     // 첨부파일 디렉토리 설정 - 상대 경로로 지정하여 일관성 유지
                     String folderPath = "assignments/" + assignmentId;
                     
                     // 파일 업로드 및 정보 저장
                     List<Map<String, String>> uploadedFiles = FileUtil.uploadMultipleFiles(fileParts, folderPath);
+                    
+                    System.out.println("업로드된 파일 수: " + uploadedFiles.size());
                     
                     if (!uploadedFiles.isEmpty()) {
                         AttachmentDAO attachmentDAO = new AttachmentDAO();
@@ -89,7 +115,11 @@ public class AssignmentAddServlet extends HttpServlet {
                             
                             System.out.println("첨부파일 저장 " + (success ? "성공" : "실패") + ": " + fileInfo.get("originalFileName"));
                         }
+                    } else {
+                        System.out.println("업로드된 파일이 없습니다 - uploadMultipleFiles 결과가 비어있음");
                     }
+                } else {
+                    System.out.println("파일 파트가 없거나 비어 있습니다");
                 }
                 
                 // 수강생들에게 알림 전송

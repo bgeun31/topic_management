@@ -147,7 +147,9 @@
                                 <div class="attachment-card-content">
                                     <% if (isImage) { %>
                                         <div class="attachment-preview">
-                                            <img src="download.jsp?type=attachment&id=<%= attachment.getId() %>" alt="<%= fileName %>" />
+                                            <img src="<%= com.assignment.util.FileUtil.getDirectAttachmentUrl(request, attachment) %>" 
+                                                alt="<%= fileName %>" 
+                                                class="card-image" />
                                         </div>
                                     <% } else { %>
                                         <div class="attachment-icon">

@@ -1,23 +1,296 @@
 package com.assignment.util;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import com.assignment.model.Attachment;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
 
 public class FileUtil {
 
     // 상대 경로 지정 (웹 앱 내부에 저장)
-    private static final String UPLOAD_DIR = "uploads";
+    private static final String UPLOAD_DIR = getOSUploadPath();
+    
+    // 로그인 ID (서버 환경에서 사용)
+    private static final String LOGIN_ID = "sskm0116";
+    
+    // 초기화 블록: 클래스가 로드될 때 한 번 실행됩니다.
+    static {
+        try {
+            // D 드라이브와 uploads 폴더 확인
+            File dDrive = new File("D:\\");
+            if (dDrive.exists()) {
+                System.out.println("D 드라이브 존재: " + dDrive.getAbsolutePath());
+                System.out.println("D 드라이브 쓰기 권한: " + dDrive.canWrite());
+                
+                // uploads 폴더 확인
+                File uploadsDir = new File("D:\\uploads");
+                if (!uploadsDir.exists()) {
+                    boolean created = uploadsDir.mkdir();
+                    System.out.println("D:\\uploads 폴더 생성: " + (created ? "성공" : "실패"));
+                } else {
+                    System.out.println("D:\\uploads 폴더 이미 존재");
+                    System.out.println("uploads 폴더 쓰기 권한: " + uploadsDir.canWrite());
+                }
+                
+                // 테스트 파일 생성 (권한 확인용)
+                File testFile = new File("D:\\uploads\\test.txt");
+                try {
+                    if (testFile.exists()) {
+                        testFile.delete();
+                    }
+                    boolean fileCreated = testFile.createNewFile();
+                    System.out.println("테스트 파일 생성: " + (fileCreated ? "성공" : "실패"));
+                    
+                    if (fileCreated) {
+                        try (FileWriter writer = new FileWriter(testFile)) {
+                            writer.write("테스트 파일 내용 - " + new Date());
+                            System.out.println("테스트 파일에 내용 쓰기 성공");
+                        }
+                        
+                        // 테스트 후 정리
+                        testFile.delete();
+                        System.out.println("테스트 파일 삭제");
+                    }
+                } catch (Exception e) {
+                    System.out.println("테스트 파일 생성/쓰기 중 오류: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.out.println("D 드라이브가 존재하지 않습니다!");
+            }
+        } catch (Exception e) {
+            System.out.println("초기화 블록 실행 중 오류: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * OS에 따라 적절한 업로드 경로를 반환합니다.
+     * @return 운영체제에 맞는 업로드 경로
+     */
+    public static String getOSUploadPath() {
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        if (isWindows) {
+            // Windows 환경 (D 드라이브 사용)
+            String path = "D:\\uploads";
+            // 폴더가 없다면 생성 시도
+            File dir = new File(path);
+            if (!dir.exists()) {
+                boolean created = dir.mkdirs();
+                System.out.println("D 드라이브에 uploads 폴더 생성 " + (created ? "성공" : "실패"));
+                if (!created) {
+                    // 생성 실패시 로그 출력
+                    System.out.println("D 드라이브에 uploads 폴더 생성에 실패했습니다. 수동으로 폴더를 생성해주세요.");
+                    
+                    // D 드라이브 존재 여부와 권한 확인
+                    File dDrive = new File("D:\\");
+                    if (dDrive.exists()) {
+                        System.out.println("D 드라이브 존재함, 쓰기 권한: " + dDrive.canWrite());
+                    } else {
+                        System.out.println("D 드라이브가 존재하지 않음");
+                    }
+                    
+                    // 대체 경로로 사용자 홈 디렉토리 또는 Tomcat 임시 디렉토리 사용
+                    String catalinaBase = System.getProperty("catalina.base");
+                    if (catalinaBase != null && !catalinaBase.isEmpty()) {
+                        path = catalinaBase + "\\temp\\uploads";
+                    } else {
+                        path = System.getProperty("user.home") + "\\uploads";
+                    }
+                    dir = new File(path);
+                    boolean altCreated = dir.mkdirs();
+                    System.out.println("대체 경로 생성 " + (altCreated ? "성공" : "실패") + ": " + path);
+                }
+            } else {
+                System.out.println("이미 존재하는 경로: " + path);
+            }
+            
+            // 경로에 쓰기 권한 확인
+            if (!dir.canWrite()) {
+                System.out.println("경고: " + path + " 경로에 쓰기 권한이 없습니다!");
+            }
+            
+            return path;
+        } else {
+            // Linux 환경
+            return "/opt/tomcat/apache-tomcat-10.1.18/webapps/uploads/" + LOGIN_ID;
+        }
+    }
+    
+    /**
+     * OS에 따라 적절한 웹 경로를 반환합니다.
+     * @param subPath 하위 경로
+     * @return 웹 접근 경로
+     */
+    public static String getWebPath(String subPath) {
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        if (isWindows) {
+            // Windows 환경 (서브 경로만)
+            return "uploads/" + subPath;
+        } else {
+            // Linux 환경 (sskm0116 포함)
+            return "uploads/" + LOGIN_ID + "/" + subPath;
+        }
+    }
+    
+    /**
+     * 파일 경로에 대한 웹 접근 URL을 생성합니다.
+     * @param request HTTP 요청 객체
+     * @param filePath 파일 경로 (uploads/ 형태)
+     * @return 파일 접근 URL
+     */
+    public static String getFileUrl(HttpServletRequest request, String filePath) {
+        // 기본 서버 URL 설정
+        String serverUrl;
+        boolean isLocalDev = "localhost".equals(request.getServerName()) || "127.0.0.1".equals(request.getServerName());
+        
+        if (isLocalDev) {
+            // 로컬 개발 환경
+            serverUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        } else {
+            // 서버 환경 (서버 IP 하드코딩)
+            serverUrl = "http://210.119.103.168:8080";
+        }
+        
+        // 파일 경로 처리
+        if (filePath == null) {
+            return null;
+        }
+        
+        System.out.println("🔗 파일 URL 생성 - 원본 경로: " + filePath);
+        
+        // 경로에서 uploads/ 부분부터 시작하도록 설정
+        if (filePath.contains("uploads/")) {
+            filePath = filePath.substring(filePath.indexOf("uploads/"));
+            System.out.println("🔗 uploads/ 이후 경로 추출: " + filePath);
+        } else if (!filePath.startsWith("uploads/")) {
+            filePath = "uploads/" + filePath;
+            System.out.println("🔗 uploads/ 접두사 추가: " + filePath);
+        }
+        
+        // 경로를 UTF-8로 인코딩 (특수 문자 처리)
+        // URL 인코딩은 여기서 적용하지 않음 (브라우저가 자동 처리)
+        
+        String fullUrl = serverUrl + "/" + filePath;
+        System.out.println("🔗 최종 생성된 URL: " + fullUrl);
+        
+        return fullUrl;
+    }
+    
+    /**
+     * 첨부파일 ID로 다운로드 URL을 생성합니다.
+     * @param request HTTP 요청 객체
+     * @param attachmentId 첨부파일 ID
+     * @return 다운로드 URL
+     */
+    public static String getDownloadUrl(HttpServletRequest request, int attachmentId) {
+        String serverUrl;
+        boolean isLocalDev = "localhost".equals(request.getServerName()) || "127.0.0.1".equals(request.getServerName());
+        
+        if (isLocalDev) {
+            // 로컬 개발 환경
+            serverUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        } else {
+            // 서버 환경 (하드코딩)
+            serverUrl = "http://210.119.103.168:8080";
+        }
+        
+        return serverUrl + "/download.jsp?type=attachment&id=" + attachmentId;
+    }
+
+    /**
+     * 업로드된 파일의 직접 접근 URL을 생성합니다 (download.jsp를 거치지 않고 직접 파일에 접근).
+     * @param request HTTP 요청 객체
+     * @param fileName 파일명
+     * @return 파일 직접 접근 URL
+     */
+    public static String getDirectFileUrl(HttpServletRequest request, String fileName) {
+        // 기본 서버 URL 설정
+        String serverUrl;
+        boolean isLocalDev = "localhost".equals(request.getServerName()) || "127.0.0.1".equals(request.getServerName());
+        
+        if (isLocalDev) {
+            // 로컬 개발 환경
+            serverUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        } else {
+            // 서버 환경 (서버 IP 하드코딩)
+            serverUrl = "http://210.119.103.168:8080";
+        }
+        
+        // 파일명 확인
+        if (fileName == null || fileName.isEmpty()) {
+            return null;
+        }
+        
+        // 이미 uploads/ 경로를 포함하는 경우
+        if (fileName.startsWith("uploads/")) {
+            return serverUrl + "/" + fileName;
+        }
+        
+        // uploads/ 경로를 포함하지 않는 경우 추가
+        return serverUrl + "/uploads/" + fileName;
+    }
+    
+    /**
+     * 첨부파일의 시스템 저장 파일명을 기반으로 직접 URL을 생성합니다.
+     * @param request HTTP 요청 객체
+     * @param attachment 첨부파일 객체
+     * @return 직접 접근 URL
+     */
+    public static String getDirectAttachmentUrl(HttpServletRequest request, Attachment attachment) {
+        if (attachment == null) {
+            return null;
+        }
+        
+        System.out.println("📎 첨부파일 URL 생성 시작 - ID: " + attachment.getId());
+        System.out.println("📎 첨부파일 타입: " + attachment.getFileType());
+        
+        // 파일 경로가 있으면 경로 기반 URL 반환
+        if (attachment.getFilePath() != null && !attachment.getFilePath().isEmpty()) {
+            System.out.println("📎 파일 경로 사용: " + attachment.getFilePath());
+            String url = getFileUrl(request, attachment.getFilePath());
+            System.out.println("📎 생성된 URL (경로 기반): " + url);
+            return url;
+        }
+        
+        // 저장된 파일명이 있으면 파일명 기반 URL 반환
+        if (attachment.getSavedFileName() != null && !attachment.getSavedFileName().isEmpty()) {
+            System.out.println("📎 저장된 파일명 사용: " + attachment.getSavedFileName());
+            String url = getDirectFileUrl(request, attachment.getSavedFileName());
+            System.out.println("📎 생성된 URL (저장 파일명 기반): " + url);
+            return url;
+        }
+        
+        // 원본 파일명만 있는 경우 
+        if (attachment.getFileName() != null && !attachment.getFileName().isEmpty()) {
+            System.out.println("📎 원본 파일명 사용: " + attachment.getFileName());
+            String url = getDirectFileUrl(request, attachment.getFileName());
+            System.out.println("📎 생성된 URL (원본 파일명 기반): " + url);
+            return url;
+        }
+        
+        System.out.println("⚠️ 첨부파일에 유효한 경로 또는 파일명이 없습니다!");
+        return null;
+    }
 
     // 단일 파일 업로드 메소드
     public static String uploadFile(HttpServletRequest request, String paramName, String subDir) {
         try {
-            // 애플리케이션 실제 경로 가져오기
-            String applicationPath = request.getServletContext().getRealPath("");
-            
             // 파일 업로드 디렉토리 생성
-            String uploadPath = applicationPath + UPLOAD_DIR;
+            String uploadPath = UPLOAD_DIR;
             
             // 디버그용 로그
             System.out.println("📁 업로드 기본 디렉토리: " + uploadPath);
@@ -25,15 +298,33 @@ public class FileUtil {
             // 기본 업로드 디렉토리 생성
             File baseUploadDir = new File(uploadPath);
             if (!baseUploadDir.exists()) {
-                boolean created = baseUploadDir.mkdirs();
-                System.out.println("📁 기본 업로드 디렉토리 생성 " + (created ? "성공" : "실패"));
+                try {
+                    boolean created = baseUploadDir.mkdirs();
+                    System.out.println("📁 기본 업로드 디렉토리 생성 " + (created ? "성공" : "실패") + ": " + uploadPath);
+                    
+                    if (!created) {
+                        // 권한 확인 및 더 자세한 정보 출력
+                        System.out.println("❌ 디렉토리 생성 실패 - 권한 문제 또는 드라이브가 존재하지 않을 수 있습니다.");
+                        System.out.println("💡 팁: D 드라이브에 수동으로 'uploads' 폴더를 생성하세요.");
+                        
+                        // 파일 쓰기 권한 확인
+                        File parentDir = baseUploadDir.getParentFile();
+                        if (parentDir != null) {
+                            System.out.println("부모 디렉토리 존재 여부: " + parentDir.exists());
+                            System.out.println("부모 디렉토리 쓰기 권한: " + parentDir.canWrite());
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("❌ 디렉토리 생성 중 예외 발생: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
 
             // 하위 디렉토리가 있는 경우 추가
             if (subDir != null && !subDir.isEmpty()) {
                 uploadPath = uploadPath + File.separator + subDir;
             }
-            
+
             // 디버그용 로그
             System.out.println("📁 최종 업로드 경로: " + uploadPath);
             
@@ -75,15 +366,70 @@ public class FileUtil {
                         // 디버그용 로그
                         System.out.println("📄 파일 저장 경로: " + filePath);
                         
-                        // 파일 저장
+                        try {
+                            // 파일 저장 시도 (Part.write 메서드 사용)
+                            System.out.println("📄 Part.write 메서드로 파일 저장 시도: " + filePath);
                         filePart.write(filePath);
+
+                            // 파일 저장 성공 여부 확인
+                            File savedFile = new File(filePath);
+                            if (savedFile.exists() && savedFile.length() > 0) {
+                                System.out.println("✅ 파일 저장 성공! 파일 크기: " + savedFile.length() + " bytes");
+                            } else {
+                                System.out.println("⚠️ Part.write 메서드로 파일 저장 실패, 수동 방식으로 재시도합니다.");
+                                
+                                // 수동으로 파일 저장 시도 (InputStream 사용)
+                                try (InputStream inputStream = filePart.getInputStream();
+                                     FileOutputStream outputStream = new FileOutputStream(filePath)) {
+                                    
+                                    byte[] buffer = new byte[8192];
+                                    int bytesRead;
+                                    int totalBytes = 0;
+                                    
+                                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                                        outputStream.write(buffer, 0, bytesRead);
+                                        totalBytes += bytesRead;
+                                    }
+                                    
+                                    System.out.println("✅ 수동 파일 저장 성공! 파일 크기: " + totalBytes + " bytes");
+                                } catch (Exception e) {
+                                    System.out.println("❌ 수동 파일 저장 중 오류: " + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            }
+                        } catch (Exception e) {
+                            System.out.println("❌ Part.write 메서드 실행 중 오류: " + e.getMessage());
+                            e.printStackTrace();
+                            
+                            // 오류 발생 시 수동으로 파일 저장 시도
+                            try (InputStream inputStream = filePart.getInputStream();
+                                 FileOutputStream outputStream = new FileOutputStream(filePath)) {
+                                
+                                byte[] buffer = new byte[8192];
+                                int bytesRead;
+                                int totalBytes = 0;
+                                
+                                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                                    outputStream.write(buffer, 0, bytesRead);
+                                    totalBytes += bytesRead;
+                                }
+                                
+                                System.out.println("✅ 수동 파일 저장 성공! 파일 크기: " + totalBytes + " bytes");
+                            } catch (Exception ex) {
+                                System.out.println("❌ 수동 파일 저장 중 오류: " + ex.getMessage());
+                                ex.printStackTrace();
+                            }
+                        }
                         
                         // 파일 타입 추출
                         String fileType = filePart.getContentType();
                         
+                        // DB에 저장할 상대 경로 구성 (웹에서 접근 가능한 경로)
+                        String webPath = "uploads/" + finalFileName;
+                        
                         // DB에 저장할 상대 경로와 파일 타입을 Map으로 반환
                         Map<String, String> fileInfo = new HashMap<>();
-                        fileInfo.put("path", UPLOAD_DIR + "/" + (subDir != null ? subDir + "/" : "") + finalFileName);
+                        fileInfo.put("path", webPath);
                         fileInfo.put("type", fileType);
                         fileInfo.put("name", finalFileName);
                         
@@ -100,96 +446,148 @@ public class FileUtil {
     }
     
     // 여러 파일 업로드 메소드
-    public static List<Map<String, String>> uploadMultipleFiles(HttpServletRequest request, String paramName, String subDir) {
-        List<Map<String, String>> fileInfoList = new ArrayList<>();
+    public static List<Map<String, String>> uploadMultipleFiles(Collection<Part> parts, String folderPath) {
+        List<Map<String, String>> uploadedFiles = new ArrayList<>();
+        
+        if (parts == null || parts.isEmpty()) {
+            System.out.println("파일 파트가 없음");
+            return uploadedFiles; // 파일이 없으면 빈 목록 반환
+        }
         
         try {
-            // 애플리케이션 실제 경로 가져오기
-            String applicationPath = request.getServletContext().getRealPath("");
             
-            // 파일 업로드 디렉토리 생성
-            String uploadPath = applicationPath + UPLOAD_DIR;
+            System.out.println("요청된 폴더 경로 (참고용, 실제 저장에는 사용하지 않음): " + folderPath);
             
-            // 디버그용 로그
-            System.out.println("📁 다중 업로드 기본 디렉토리: " + uploadPath);
+           
+            String baseUploadPath = getOSUploadPath();
+            String finalUploadPath = baseUploadPath;
             
-            // 기본 업로드 디렉토리 생성
-            File baseUploadDir = new File(uploadPath);
-            if (!baseUploadDir.exists()) {
-                boolean created = baseUploadDir.mkdirs();
-                System.out.println("📁 기본 업로드 디렉토리 생성 " + (created ? "성공" : "실패"));
-            }
-
-            // 하위 디렉토리가 있는 경우 추가
-            if (subDir != null && !subDir.isEmpty()) {
-                uploadPath = uploadPath + File.separator + subDir;
-            }
+            System.out.println("✅ 파일이 저장될 경로: " + finalUploadPath);
             
-            // 최종 업로드 디렉토리 생성
-            File uploadDir = new File(uploadPath);
-            if (!uploadDir.exists()) {
-                boolean created = uploadDir.mkdirs();
-                System.out.println("📁 최종 업로드 디렉토리 생성 " + (created ? "성공" : "실패"));
-            }
-
-            if (request.getContentType() != null &&
-                request.getContentType().toLowerCase().startsWith("multipart/")) {
+            // 디렉토리 생성
+            File uploadDir = new File(finalUploadPath);
+            if (!uploadDir.exists() && !uploadDir.mkdirs()) {
+                System.out.println("❌ 업로드 폴더 생성 실패: " + uploadDir.getAbsolutePath());
                 
-                // 여러 파일 처리
-                Collection<Part> fileParts = request.getParts();
-                for (Part filePart : fileParts) {
-                    // 파일 파트인지 확인
-                    if (filePart.getName().equals(paramName) && filePart.getSize() > 0) {
-                        String originalFileName = getFileName(filePart);
-                        if (originalFileName != null && !originalFileName.isEmpty()) {
-                            // 파일명 준비
-                            String fileExtension = "";
-                            String fileNameWithoutExt = originalFileName;
-                            if (originalFileName.contains(".")) {
-                                fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                                fileNameWithoutExt = originalFileName.substring(0, originalFileName.lastIndexOf("."));
-                            }
-                            
-                            // 중복 파일 처리
-                            String finalFileName = originalFileName;
-                            File file = new File(uploadPath + File.separator + finalFileName);
-                            
-                            // 파일이 존재하면 파일명에 번호를 추가하는 방식으로 중복 처리
-                            int count = 1;
-                            while (file.exists()) {
-                                finalFileName = fileNameWithoutExt + "(" + count + ")" + fileExtension;
-                                file = new File(uploadPath + File.separator + finalFileName);
-                                count++;
-                            }
-                            
-                            String filePath = uploadPath + File.separator + finalFileName;
-                            
-                            // 디버그용 로그
-                            System.out.println("📄 파일 저장 경로: " + filePath);
-                            
-                            // 파일 저장
-                            filePart.write(filePath);
-                            
-                            // 파일 타입 추출
-                            String fileType = filePart.getContentType();
-                            
-                            // DB에 저장할 상대 경로와 파일 타입을 Map으로 반환
-                            Map<String, String> fileInfo = new HashMap<>();
-                            fileInfo.put("path", UPLOAD_DIR + "/" + (subDir != null ? subDir + "/" : "") + finalFileName);
-                            fileInfo.put("type", fileType);
-                            fileInfo.put("name", finalFileName);
-                            
-                            fileInfoList.add(fileInfo);
-                        }
+                // 대체 경로 시도 (홈 디렉토리)
+                String homeDir = System.getProperty("user.home");
+                uploadDir = new File(homeDir, "uploads");
+                finalUploadPath = uploadDir.getAbsolutePath();
+                
+                if (!uploadDir.exists() && !uploadDir.mkdirs()) {
+                    System.out.println("❌ 대체 업로드 폴더(홈 디렉토리) 생성 실패: " + uploadDir.getAbsolutePath());
+                    
+                    // 임시 디렉토리 시도
+                    String tempDir = System.getProperty("java.io.tmpdir");
+                    uploadDir = new File(tempDir, "uploads");
+                    finalUploadPath = uploadDir.getAbsolutePath();
+                    
+                    if (!uploadDir.exists() && !uploadDir.mkdirs()) {
+                        System.out.println("❌ 대체 업로드 폴더(임시 디렉토리) 생성 실패: " + uploadDir.getAbsolutePath());
+                        return uploadedFiles;
                     }
                 }
             }
+            
+            // 파일 저장
+            for (Part part : parts) {
+                if (part != null && part.getSize() > 0 && 
+                    part.getSubmittedFileName() != null && !part.getSubmittedFileName().isEmpty()) {
+                    
+                    try {
+                        String originalFileName = part.getSubmittedFileName();
+                        String contentType = part.getContentType();
+                        
+                        // 고유 파일명 생성
+                        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+                        String savedFileName = uniqueId + "_" + originalFileName;
+                        
+                        // 전체 파일 경로
+                        String fullFilePath = finalUploadPath + File.separator + savedFileName;
+                        System.out.println("파일 저장 경로: " + fullFilePath);
+                        
+                        // 파일 저장
+                        try {
+                            // 파일 저장 시도 (Part.write 메서드 사용)
+                            System.out.println("📄 Part.write 메서드로 파일 저장 시도: " + fullFilePath);
+                            part.write(fullFilePath);
+                            
+                            // 파일 저장 성공 여부 확인
+                            File savedFile = new File(fullFilePath);
+                            if (savedFile.exists() && savedFile.length() > 0) {
+                                System.out.println("✅ 파일 저장 성공! 파일 크기: " + savedFile.length() + " bytes");
+                            } else {
+                                System.out.println("⚠️ Part.write 메서드로 파일 저장 실패, 수동 방식으로 재시도합니다.");
+                                
+                                // 수동으로 파일 저장 시도 (InputStream 사용)
+                                try (InputStream inputStream = part.getInputStream();
+                                     FileOutputStream outputStream = new FileOutputStream(fullFilePath)) {
+                                    
+                                    byte[] buffer = new byte[8192];
+                                    int bytesRead;
+                                    int totalBytes = 0;
+                                    
+                                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                                        outputStream.write(buffer, 0, bytesRead);
+                                        totalBytes += bytesRead;
+                                    }
+                                    
+                                    System.out.println("✅ 수동 파일 저장 성공! 파일 크기: " + totalBytes + " bytes");
+                                } catch (Exception e) {
+                                    System.out.println("❌ 수동 파일 저장 중 오류: " + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            }
+                        } catch (Exception e) {
+                            System.out.println("❌ Part.write 메서드 실행 중 오류: " + e.getMessage());
+                            e.printStackTrace();
+                            
+                            // 오류 발생 시 수동으로 파일 저장 시도
+                            try (InputStream inputStream = part.getInputStream();
+                                 FileOutputStream outputStream = new FileOutputStream(fullFilePath)) {
+                                
+                                byte[] buffer = new byte[8192];
+                                int bytesRead;
+                                int totalBytes = 0;
+                                
+                                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                                    outputStream.write(buffer, 0, bytesRead);
+                                    totalBytes += bytesRead;
+                                }
+                                
+                                System.out.println("✅ 수동 파일 저장 성공! 파일 크기: " + totalBytes + " bytes");
+                            } catch (Exception ex) {
+                                System.out.println("❌ 수동 파일 저장 중 오류: " + ex.getMessage());
+                                ex.printStackTrace();
+                                continue; // 이 파일은 건너뛰고 다음 파일 처리
+                            }
+                        }
+                        
+                        // DB에 저장할 상대 경로 (폴더 정보 없이 'uploads/파일명' 형식으로 저장)
+                        String relativeFilePath = "uploads/" + savedFileName;
+                        
+                        // 파일 정보 기록
+                        Map<String, String> fileInfo = new HashMap<>();
+                        fileInfo.put("originalFileName", originalFileName);
+                        fileInfo.put("savedFileName", savedFileName);
+                        fileInfo.put("filePath", relativeFilePath);
+                        fileInfo.put("contentType", contentType);
+                        
+                        uploadedFiles.add(fileInfo);
+                        System.out.println("파일 저장 완료: " + originalFileName + " -> " + relativeFilePath);
+                    } catch (Exception e) {
+                        System.out.println("파일 저장 중 오류: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                }
+            }
+            
         } catch (Exception e) {
-            System.out.println("❌ 다중 파일 업로드 에러: " + e.getMessage());
+            System.out.println("파일 업로드 처리 중 오류: " + e.getMessage());
             e.printStackTrace();
         }
-
-        return fileInfoList;
+        
+        return uploadedFiles;
     }
 
     // Part에서 파일명 추출
@@ -211,8 +609,21 @@ public class FileUtil {
     public static boolean deleteFile(HttpServletRequest request, String filePath) {
         if (filePath != null && !filePath.isEmpty()) {
             try {
-                String applicationPath = request.getServletContext().getRealPath("");
-                String fullPath = applicationPath + filePath;
+                // 웹 경로를 절대 경로로 변환
+                String webPathPart = filePath;
+                String fileName = "";
+                
+                // uploads/파일명 형식에서 파일명만 추출
+                if (webPathPart.startsWith("uploads/")) {
+                    fileName = webPathPart.substring("uploads/".length());
+                } else if (webPathPart.contains("/")) {
+                    fileName = webPathPart.substring(webPathPart.lastIndexOf("/") + 1);
+                } else {
+                    fileName = webPathPart;
+                }
+                
+                // OS별 업로드 경로와 결합 (파일명만 사용)
+                String fullPath = getOSUploadPath() + File.separator + fileName;
                 
                 // 디버그용 로그
                 System.out.println("🗑️ 파일 삭제 경로: " + fullPath);
@@ -222,12 +633,54 @@ public class FileUtil {
                     return file.delete();
                 } else {
                     System.out.println("⚠️ 삭제할 파일이 존재하지 않습니다: " + fullPath);
+                    
+                    // 원래 경로에서 파일이 발견되지 않으면, assignments 하위에서도 검색
+                    File dir = new File(getOSUploadPath());
+                    boolean found = false;
+                    
+                    // uploads 폴더 아래 모든 디렉토리에서 파일 검색
+                    if (dir.exists() && dir.isDirectory()) {
+                        found = findAndDeleteFile(dir, fileName);
+                    }
+                    
+                    if (!found) {
+                        System.out.println("⚠️ 모든 위치에서 파일을 찾을 수 없습니다: " + fileName);
+                    }
+                    
+                    return found;
                 }
             } catch (Exception e) {
                 System.out.println("❌ 파일 삭제 에러: " + e.getMessage());
                 e.printStackTrace();
             }
         }
+        return false;
+    }
+    
+    // 지정된 디렉토리와 하위 디렉토리에서 파일을 찾아 삭제
+    private static boolean findAndDeleteFile(File directory, String fileName) {
+        if (!directory.isDirectory()) {
+            return false;
+        }
+        
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return false;
+        }
+        
+        for (File file : files) {
+            if (file.isDirectory()) {
+                if (findAndDeleteFile(file, fileName)) {
+                    return true;
+                }
+            } else if (file.getName().equals(fileName)) {
+                System.out.println("🔍 파일 발견: " + file.getAbsolutePath());
+                boolean deleted = file.delete();
+                System.out.println("🗑️ 파일 삭제 " + (deleted ? "성공" : "실패") + ": " + file.getAbsolutePath());
+                return deleted;
+            }
+        }
+        
         return false;
     }
     
@@ -397,127 +850,6 @@ public class FileUtil {
     }
 
     /**
-     * 여러 파일을 저장하고 저장된 파일 정보 리스트를 반환합니다.
-     * @param parts 파일 파트 리스트
-     * @param folderPath 저장할 폴더 경로 (예: "assignments/123")
-     * @return 저장된 파일 정보 리스트 (원래 파일명, 저장된 파일명, 파일 경로, MIME 타입)
-     */
-    public static List<Map<String, String>> uploadMultipleFiles(Collection<Part> parts, String folderPath) {
-        List<Map<String, String>> uploadedFiles = new ArrayList<>();
-        
-        if (parts == null || parts.isEmpty()) {
-            System.out.println("파일 파트가 없음");
-            return uploadedFiles; // 파일이 없으면 빈 목록 반환
-        }
-        
-        try {
-            // 경로 준비
-            if (folderPath == null) {
-                folderPath = "default";
-            }
-            
-            // 표준화된 폴더 경로 (항상 슬래시 사용)
-            String standardFolderPath = folderPath.replace('\\', '/');
-            System.out.println("표준화된 폴더 경로: " + standardFolderPath);
-            
-            // 로컬 파일 시스템에서 사용할 경로
-            String systemFolderPath = standardFolderPath.replace('/', File.separatorChar);
-            
-            // 업로드 디렉토리
-            String uploadsFolderPath = "uploads";
-            
-            // 가능한 업로드 기본 경로들
-            List<String> baseDirectories = new ArrayList<>();
-            
-            // 1. 사용자 홈 디렉토리
-            baseDirectories.add(System.getProperty("user.home"));
-            
-            // 2. 임시 디렉토리
-            baseDirectories.add(System.getProperty("java.io.tmpdir"));
-            
-            // 최종 업로드 경로
-            String finalUploadPath = null;
-            
-            // 각 기본 경로에 대해 시도
-            for (String baseDir : baseDirectories) {
-                // uploads/assignments/123 형태의 경로 구성
-                String fullPath = baseDir + File.separator + uploadsFolderPath + 
-                                 File.separator + systemFolderPath;
-                
-                File dir = new File(fullPath);
-                
-                System.out.println("시도할 업로드 경로: " + fullPath);
-                
-                // 디렉토리가 있거나 생성 가능하면 사용
-                if (dir.exists() || dir.mkdirs()) {
-                    finalUploadPath = fullPath;
-                    System.out.println("사용할 업로드 경로: " + finalUploadPath);
-                    break;
-                }
-            }
-            
-            // 모든 시도 실패 시 임시 디렉토리에 강제 생성
-            if (finalUploadPath == null) {
-                String tempDir = System.getProperty("java.io.tmpdir");
-                finalUploadPath = tempDir + File.separator + uploadsFolderPath;
-                
-                File dir = new File(finalUploadPath);
-                if (!dir.exists()) {
-                    dir.mkdir();
-                }
-                
-                System.out.println("최종 임시 업로드 경로: " + finalUploadPath);
-            }
-            
-            // 파일 저장
-            for (Part part : parts) {
-                if (part != null && part.getSize() > 0 && 
-                    part.getSubmittedFileName() != null && !part.getSubmittedFileName().isEmpty()) {
-                    
-                    try {
-                        String originalFileName = part.getSubmittedFileName();
-                        String contentType = part.getContentType();
-                        
-                        // 고유 파일명 생성
-                        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
-                        String savedFileName = uniqueId + "_" + originalFileName;
-                        
-                        // 전체 파일 경로
-                        String fullFilePath = finalUploadPath + File.separator + savedFileName;
-                        System.out.println("파일 저장 경로: " + fullFilePath);
-                        
-                        // 파일 저장
-                        part.write(fullFilePath);
-                        
-                        // DB에 저장할 상대 경로 (항상 슬래시 형식으로 저장)
-                        // uploads/assignments/123/abcd1234_file.pdf 형태
-                        String relativeFilePath = uploadsFolderPath + "/" + standardFolderPath + "/" + savedFileName;
-                        
-                        // 파일 정보 기록
-                        Map<String, String> fileInfo = new HashMap<>();
-                        fileInfo.put("originalFileName", originalFileName);
-                        fileInfo.put("savedFileName", savedFileName);
-                        fileInfo.put("filePath", relativeFilePath);
-                        fileInfo.put("contentType", contentType);
-                        
-                        uploadedFiles.add(fileInfo);
-                        System.out.println("파일 저장 완료: " + originalFileName + " -> " + relativeFilePath);
-                    } catch (Exception e) {
-                        System.out.println("파일 저장 중 오류: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                }
-            }
-            
-        } catch (Exception e) {
-            System.out.println("파일 업로드 처리 중 오류: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-        return uploadedFiles;
-    }
-
-    /**
      * 지정된 파일명으로 여러 파일 중 특정 파일을 찾습니다.
      * @param request 요청 객체
      * @param fileInputName 파일 입력 필드 이름
@@ -539,6 +871,29 @@ public class FileUtil {
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();
+        }
+    }
+
+    // 파일 직접 저장 유틸리티 메서드 (테스트 및 디버깅용)
+    public static boolean saveTestFile(String content) {
+        try {
+            // 테스트 파일 저장 경로
+            String testFilePath = UPLOAD_DIR + File.separator + "test_" + System.currentTimeMillis() + ".txt";
+            File testFile = new File(testFilePath);
+            
+            // 파일 저장
+            try (FileWriter writer = new FileWriter(testFile)) {
+                writer.write(content);
+            }
+            
+            // 파일 생성 여부 확인
+            boolean success = testFile.exists() && testFile.length() > 0;
+            System.out.println("테스트 파일 저장 " + (success ? "성공" : "실패") + ": " + testFilePath);
+            return success;
+        } catch (Exception e) {
+            System.out.println("테스트 파일 저장 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
     }
 }

@@ -92,20 +92,31 @@ public class AssignmentUpdateServlet extends HttpServlet {
                     // 파일이 업로드된 경우 첨부파일 DB에 저장
                     AttachmentDAO attachmentDAO = new AttachmentDAO();
                     
+                    System.out.println("업로드된 파일 정보: " + uploadedFiles.size() + "개");
+                    
                     for (Map<String, String> fileInfo : uploadedFiles) {
-                        String originalFileName = fileInfo.get("name");
-                        String savedFileName = fileInfo.get("savedFileName");
-                        String filePath = fileInfo.get("path");
-                        String contentType = fileInfo.get("type");
+                        // 업로드된 파일 정보 디버깅
+                        System.out.println("파일 정보: " + fileInfo);
                         
-                        attachmentDAO.addAttachment(
+                        String originalFileName = fileInfo.get("originalFileName");
+                        String savedFileName = fileInfo.get("savedFileName");
+                        String filePath = fileInfo.get("filePath");
+                        String contentType = fileInfo.get("contentType");
+                        
+                        System.out.println("파일 첨부 추가: " + originalFileName + " -> " + filePath + " (" + contentType + ")");
+                        
+                        boolean added = attachmentDAO.addAttachment(
                             assignmentId,
                             originalFileName, 
                             savedFileName,
                             filePath,
                             contentType
                         );
+                        
+                        System.out.println("첨부파일 추가 결과: " + (added ? "성공" : "실패"));
                     }
+                } else {
+                    System.out.println("파일 업로드 결과가 비어있거나 null입니다.");
                 }
             }
         } catch (Exception e) {
