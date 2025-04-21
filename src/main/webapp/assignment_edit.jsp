@@ -93,7 +93,7 @@
                             <div class="attachment-card">
                                 <% if (attachment.isImage()) { %>
                                     <div class="attachment-preview">
-                                        <img src="<%= attachment.getFilePath() %>" alt="<%= attachment.getFileName() %>">
+                                        <img src="download.jsp?type=attachment&id=<%= attachment.getId() %>" alt="<%= attachment.getFileName() %>">
                                     </div>
                                 <% } else { %>
                                     <div class="attachment-icon">

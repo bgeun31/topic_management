@@ -129,24 +129,200 @@
             <% } %>
             
             <% if (!attachments.isEmpty()) { %>
-                <div class="attachment-list">
-                    <p><i class="fas fa-paperclip"></i> <strong>첨부파일 목록:</strong></p>
-                    <ul class="files-list">
+                <div class="attachment-section">
+                    <h4><i class="fas fa-paperclip"></i> 첨부파일 목록</h4>
+                    <div class="attachment-grid">
                         <% for (Attachment attachment : attachments) { %>
-                            <li>
-                                <% 
-                                String contentType = attachment.getFileType();
-                                String fileName = attachment.getFileName();
-                                String iconClass = FileUtil.getFileIconClass(contentType, fileName);
-                                %>
-                                <i class="<%= iconClass %>"></i>
-                                <a href="download.jsp?type=attachment&id=<%= attachment.getId() %>">
-                                    <%= attachment.getFileName() %>
-                                </a>
-                            </li>
+                            <% 
+                            String contentType = attachment.getFileType();
+                            String fileName = attachment.getFileName();
+                            String iconClass = FileUtil.getFileIconClass(contentType, fileName);
+                            boolean isImage = attachment.isImage();
+                            String fileExt = "";
+                            if (fileName.contains(".")) {
+                                fileExt = fileName.substring(fileName.lastIndexOf(".") + 1).toUpperCase();
+                            }
+                            %>
+                            <div class="attachment-card">
+                                <div class="attachment-card-content">
+                                    <% if (isImage) { %>
+                                        <div class="attachment-preview">
+                                            <img src="download.jsp?type=attachment&id=<%= attachment.getId() %>" alt="<%= fileName %>" />
+                                        </div>
+                                    <% } else { %>
+                                        <div class="attachment-icon">
+                                            <i class="<%= iconClass %>"></i>
+                                            <span class="file-ext"><%= fileExt %></span>
+                                        </div>
+                                    <% } %>
+                                    <div class="attachment-details">
+                                        <div class="file-name" title="<%= fileName %>"><%= fileName %></div>
+                                        <div class="file-meta">
+                                            <span class="upload-date"><i class="fas fa-calendar-alt"></i> <%= attachment.getUploadDate().substring(0, 10) %></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="attachment-actions">
+                                    <a href="download.jsp?type=attachment&id=<%= attachment.getId() %>" class="download-btn">
+                                        <i class="fas fa-download"></i> 다운로드
+                                    </a>
+                                </div>
+                            </div>
                         <% } %>
-                    </ul>
+                    </div>
                 </div>
+                
+                <style>
+                    .attachment-section {
+                        margin-top: 20px;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 8px;
+                        padding: 20px;
+                        background-color: #f9f9f9;
+                    }
+                    
+                    .attachment-section h4 {
+                        margin-top: 0;
+                        margin-bottom: 15px;
+                        color: #333;
+                        font-size: 1.2rem;
+                        border-bottom: 1px solid #e0e0e0;
+                        padding-bottom: 10px;
+                    }
+                    
+                    .attachment-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                        gap: 15px;
+                    }
+                    
+                    .attachment-card {
+                        background: white;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                        overflow: hidden;
+                        transition: transform 0.3s, box-shadow 0.3s;
+                        display: flex;
+                        flex-direction: column;
+                        height: 100%;
+                    }
+                    
+                    .attachment-card:hover {
+                        transform: translateY(-5px);
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                    }
+                    
+                    .attachment-card-content {
+                        padding: 15px;
+                        flex: 1;
+                    }
+                    
+                    .attachment-preview {
+                        height: 120px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        overflow: hidden;
+                        margin-bottom: 10px;
+                        background-color: #f0f0f0;
+                        border-radius: 4px;
+                    }
+                    
+                    .attachment-preview img {
+                        max-width: 100%;
+                        max-height: 100%;
+                        object-fit: contain;
+                    }
+                    
+                    .attachment-icon {
+                        height: 100px;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        margin-bottom: 10px;
+                        background-color: #f5f5f5;
+                        border-radius: 4px;
+                        position: relative;
+                    }
+                    
+                    .attachment-icon i {
+                        font-size: 3rem;
+                        color: #555;
+                    }
+                    
+                    .attachment-icon .file-ext {
+                        margin-top: 5px;
+                        font-size: 0.8rem;
+                        background-color: #555;
+                        color: white;
+                        padding: 2px 5px;
+                        border-radius: 3px;
+                    }
+                    
+                    .attachment-details {
+                        margin-top: 5px;
+                    }
+                    
+                    .file-name {
+                        font-weight: 600;
+                        margin-bottom: 5px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    
+                    .file-meta {
+                        display: flex;
+                        font-size: 0.8rem;
+                        color: #777;
+                    }
+                    
+                    .upload-date {
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                    }
+                    
+                    .attachment-actions {
+                        padding: 10px 15px;
+                        background-color: #f7f7f7;
+                        border-top: 1px solid #eee;
+                    }
+                    
+                    .download-btn {
+                        display: block;
+                        text-align: center;
+                        background-color: #4b70dd;
+                        color: white;
+                        padding: 8px 0;
+                        border-radius: 4px;
+                        text-decoration: none;
+                        font-weight: 500;
+                        transition: background-color 0.2s;
+                    }
+                    
+                    .download-btn:hover {
+                        background-color: #3759c2;
+                    }
+                    
+                    /* Responsive styles */
+                    @media (max-width: 768px) {
+                        .attachment-grid {
+                            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                        }
+                    }
+                    
+                    @media (max-width: 480px) {
+                        .attachment-grid {
+                            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                        }
+                        
+                        .attachment-icon i {
+                            font-size: 2.5rem;
+                        }
+                    }
+                </style>
             <% } %>
         </div>
     </section>
