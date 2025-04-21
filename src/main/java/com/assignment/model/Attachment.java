@@ -7,17 +7,19 @@ public class Attachment {
     private int id;
     private int refId;          // 참조 ID (과제 ID, 제출물 ID 등)
     private String refType;     // 참조 타입 (assignment, submission 등)
-    private String fileName;    // 파일 이름
+    private String fileName;    // 파일 이름 (원본 파일명)
+    private String savedFileName; // 저장된 파일명
     private String filePath;    // 파일 경로
     private String fileType;    // 파일 타입 (MIME 타입)
     private String uploadDate;  // 업로드 날짜
     
     public Attachment() {}
     
-    public Attachment(int refId, String refType, String fileName, String filePath, String fileType) {
+    public Attachment(int refId, String refType, String fileName, String savedFileName, String filePath, String fileType) {
         this.refId = refId;
         this.refType = refType;
         this.fileName = fileName;
+        this.savedFileName = savedFileName;
         this.filePath = filePath;
         this.fileType = fileType;
     }
@@ -52,6 +54,14 @@ public class Attachment {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getSavedFileName() {
+        return savedFileName;
+    }
+
+    public void setSavedFileName(String savedFileName) {
+        this.savedFileName = savedFileName;
     }
 
     public String getFilePath() {

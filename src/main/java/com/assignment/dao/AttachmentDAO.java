@@ -84,6 +84,7 @@ public class AttachmentDAO {
                 attachment.setRefId(rs.getInt("assignment_id"));
                 attachment.setRefType("assignment"); // 고정 값
                 attachment.setFileName(rs.getString("original_file_name"));
+                attachment.setSavedFileName(rs.getString("saved_file_name"));
                 attachment.setFilePath(rs.getString("file_path"));
                 attachment.setFileType(rs.getString("content_type"));
                 attachment.setUploadDate(rs.getTimestamp("upload_date").toString());
@@ -127,6 +128,7 @@ public class AttachmentDAO {
                 attachment.setRefId(rs.getInt("assignment_id"));
                 attachment.setRefType("assignment"); // 고정 값
                 attachment.setFileName(rs.getString("original_file_name"));
+                attachment.setSavedFileName(rs.getString("saved_file_name"));
                 attachment.setFilePath(rs.getString("file_path"));
                 attachment.setFileType(rs.getString("content_type"));
                 attachment.setUploadDate(rs.getTimestamp("upload_date").toString());
@@ -227,7 +229,20 @@ public class AttachmentDAO {
                 attachment.put("assignmentId", rs.getInt("assignment_id"));
                 attachment.put("originalFileName", rs.getString("original_file_name"));
                 attachment.put("savedFileName", rs.getString("saved_file_name"));
-                attachment.put("filePath", rs.getString("file_path"));
+                
+                // 파일 경로 표준화
+                String filePath = rs.getString("file_path");
+                if (filePath != null) {
+                    // 슬래시로 경로 구분자 표준화
+                    filePath = filePath.replace('\\', '/');
+                    // 경로가 uploads/로 시작하는지 확인하고 아니면 추가
+                    if (!filePath.startsWith("uploads/")) {
+                        filePath = "uploads/" + filePath;
+                    }
+                }
+                
+                attachment.put("filePath", filePath);
+                attachment.put("path", filePath); // 하위 호환성 유지
                 attachment.put("contentType", rs.getString("content_type"));
                 attachment.put("uploadDate", rs.getTimestamp("upload_date"));
                 
@@ -257,20 +272,33 @@ public class AttachmentDAO {
             conn = DBUtil.getConnection();
             ensureAttachmentsTableExists(conn);
             
-            String sql = "SELECT id, assignment_id, original_file_name, saved_file_name, file_path, content_type, upload_date " +
-                         "FROM attachments WHERE id = ?";
+            String sql = "SELECT * FROM attachments WHERE id = ?";
             
             pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, id);
             
             rs = pstmt.executeQuery();
+            
             if (rs.next()) {
                 attachment = new HashMap<>();
                 attachment.put("id", rs.getInt("id"));
                 attachment.put("assignmentId", rs.getInt("assignment_id"));
                 attachment.put("originalFileName", rs.getString("original_file_name"));
                 attachment.put("savedFileName", rs.getString("saved_file_name"));
-                attachment.put("filePath", rs.getString("file_path"));
+                
+                // 파일 경로 표준화
+                String filePath = rs.getString("file_path");
+                if (filePath != null) {
+                    // 슬래시로 경로 구분자 표준화
+                    filePath = filePath.replace('\\', '/');
+                    // 경로가 uploads/로 시작하는지 확인하고 아니면 추가
+                    if (!filePath.startsWith("uploads/")) {
+                        filePath = "uploads/" + filePath;
+                    }
+                }
+                
+                attachment.put("filePath", filePath);
+                attachment.put("path", filePath); // 하위 호환성 유지
                 attachment.put("contentType", rs.getString("content_type"));
                 attachment.put("uploadDate", rs.getTimestamp("upload_date"));
             }

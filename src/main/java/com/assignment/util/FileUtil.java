@@ -399,102 +399,118 @@ public class FileUtil {
     /**
      * 여러 파일을 저장하고 저장된 파일 정보 리스트를 반환합니다.
      * @param parts 파일 파트 리스트
-     * @param folderPath 저장할 폴더 경로
+     * @param folderPath 저장할 폴더 경로 (예: "assignments/123")
      * @return 저장된 파일 정보 리스트 (원래 파일명, 저장된 파일명, 파일 경로, MIME 타입)
      */
     public static List<Map<String, String>> uploadMultipleFiles(Collection<Part> parts, String folderPath) {
         List<Map<String, String>> uploadedFiles = new ArrayList<>();
         
-        if (parts.isEmpty()) {
+        if (parts == null || parts.isEmpty()) {
+            System.out.println("파일 파트가 없음");
             return uploadedFiles; // 파일이 없으면 빈 목록 반환
         }
         
         try {
-            // 현재 작업 디렉토리 기준으로 전체 경로 생성
-            String basePath = System.getProperty("user.dir");
-            // 톰캣의 경우 기본적으로 webapp 폴더를 기준으로 함
-            // 하지만 Eclipse의 경우 프로젝트 폴더가 아닌 워크스페이스 폴더일 수 있음
-            
-            // 웹앱 루트가 있는지 확인해보고 있으면 그것을 사용
-            File webappRoot = new File(basePath, "src/main/webapp");
-            if (webappRoot.exists() && webappRoot.isDirectory()) {
-                basePath = webappRoot.getAbsolutePath();
+            // 경로 준비
+            if (folderPath == null) {
+                folderPath = "default";
             }
             
-            // 전체 경로 생성
-            String fullFolderPath = basePath + File.separator + folderPath;
-            File uploadDir = new File(fullFolderPath);
+            // 표준화된 폴더 경로 (항상 슬래시 사용)
+            String standardFolderPath = folderPath.replace('\\', '/');
+            System.out.println("표준화된 폴더 경로: " + standardFolderPath);
             
-            System.out.println("파일 업로드 시도 중... 폴더 경로: " + fullFolderPath);
+            // 로컬 파일 시스템에서 사용할 경로
+            String systemFolderPath = standardFolderPath.replace('/', File.separatorChar);
             
-            // 디렉터리가 없으면 모든 부모 경로와 함께 생성
-            if (!uploadDir.exists()) {
-                boolean created = uploadDir.mkdirs();
-                if (!created) {
-                    System.out.println("경로 생성 실패: " + fullFolderPath);
-                    
-                    // 다른 방법 시도: 시스템 임시 디렉토리 사용
-                    String tempDir = System.getProperty("java.io.tmpdir");
-                    fullFolderPath = tempDir + File.separator + folderPath;
-                    uploadDir = new File(fullFolderPath);
-                    created = uploadDir.mkdirs();
-                    
-                    if (!created) {
-                        System.out.println("임시 경로 생성 실패: " + fullFolderPath);
-                        return uploadedFiles;
-                    }
-                    System.out.println("임시 경로 사용: " + fullFolderPath);
-                } else {
-                    System.out.println("경로 생성 성공: " + fullFolderPath);
+            // 업로드 디렉토리
+            String uploadsFolderPath = "uploads";
+            
+            // 가능한 업로드 기본 경로들
+            List<String> baseDirectories = new ArrayList<>();
+            
+            // 1. 사용자 홈 디렉토리
+            baseDirectories.add(System.getProperty("user.home"));
+            
+            // 2. 임시 디렉토리
+            baseDirectories.add(System.getProperty("java.io.tmpdir"));
+            
+            // 최종 업로드 경로
+            String finalUploadPath = null;
+            
+            // 각 기본 경로에 대해 시도
+            for (String baseDir : baseDirectories) {
+                // uploads/assignments/123 형태의 경로 구성
+                String fullPath = baseDir + File.separator + uploadsFolderPath + 
+                                 File.separator + systemFolderPath;
+                
+                File dir = new File(fullPath);
+                
+                System.out.println("시도할 업로드 경로: " + fullPath);
+                
+                // 디렉토리가 있거나 생성 가능하면 사용
+                if (dir.exists() || dir.mkdirs()) {
+                    finalUploadPath = fullPath;
+                    System.out.println("사용할 업로드 경로: " + finalUploadPath);
+                    break;
                 }
             }
             
+            // 모든 시도 실패 시 임시 디렉토리에 강제 생성
+            if (finalUploadPath == null) {
+                String tempDir = System.getProperty("java.io.tmpdir");
+                finalUploadPath = tempDir + File.separator + uploadsFolderPath;
+                
+                File dir = new File(finalUploadPath);
+                if (!dir.exists()) {
+                    dir.mkdir();
+                }
+                
+                System.out.println("최종 임시 업로드 경로: " + finalUploadPath);
+            }
+            
+            // 파일 저장
             for (Part part : parts) {
                 if (part != null && part.getSize() > 0 && 
                     part.getSubmittedFileName() != null && !part.getSubmittedFileName().isEmpty()) {
+                    
                     try {
-                        String submittedFileName = part.getSubmittedFileName();
+                        String originalFileName = part.getSubmittedFileName();
                         String contentType = part.getContentType();
                         
-                        // 파일명 충돌 방지를 위한 접두사 생성
-                        String uniquePrefix = UUID.randomUUID().toString().substring(0, 8);
-                        String savedFileName = uniquePrefix + "_" + submittedFileName;
+                        // 고유 파일명 생성
+                        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+                        String savedFileName = uniqueId + "_" + originalFileName;
                         
-                        // 파일 저장 경로 (전체 경로)
-                        String fullFilePath = fullFolderPath + File.separator + savedFileName;
+                        // 전체 파일 경로
+                        String fullFilePath = finalUploadPath + File.separator + savedFileName;
                         System.out.println("파일 저장 경로: " + fullFilePath);
                         
-                        // 파일 저장 - 직접 파일 복사 방식으로 변경
-                        try (InputStream input = part.getInputStream();
-                             OutputStream output = new FileOutputStream(fullFilePath)) {
-                            
-                            byte[] buffer = new byte[1024];
-                            int length;
-                            while ((length = input.read(buffer)) > 0) {
-                                output.write(buffer, 0, length);
-                            }
-                            System.out.println("파일 저장 성공: " + fullFilePath);
-                        }
+                        // 파일 저장
+                        part.write(fullFilePath);
                         
-                        // 상대 경로 계산 (DB에 저장)
-                        String relativeFilePath = folderPath + "/" + savedFileName;
+                        // DB에 저장할 상대 경로 (항상 슬래시 형식으로 저장)
+                        // uploads/assignments/123/abcd1234_file.pdf 형태
+                        String relativeFilePath = uploadsFolderPath + "/" + standardFolderPath + "/" + savedFileName;
                         
-                        // 파일 정보 저장
+                        // 파일 정보 기록
                         Map<String, String> fileInfo = new HashMap<>();
-                        fileInfo.put("name", submittedFileName);
+                        fileInfo.put("originalFileName", originalFileName);
                         fileInfo.put("savedFileName", savedFileName);
-                        fileInfo.put("path", relativeFilePath);
-                        fileInfo.put("type", contentType);
+                        fileInfo.put("filePath", relativeFilePath);
+                        fileInfo.put("contentType", contentType);
                         
                         uploadedFiles.add(fileInfo);
+                        System.out.println("파일 저장 완료: " + originalFileName + " -> " + relativeFilePath);
                     } catch (Exception e) {
-                        System.out.println("파일 저장 중 오류 발생: " + e.getMessage());
+                        System.out.println("파일 저장 중 오류: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
             }
+            
         } catch (Exception e) {
-            System.out.println("파일 처리 중 오류 발생: " + e.getMessage());
+            System.out.println("파일 업로드 처리 중 오류: " + e.getMessage());
             e.printStackTrace();
         }
         

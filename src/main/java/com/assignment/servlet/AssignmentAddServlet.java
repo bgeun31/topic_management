@@ -61,25 +61,33 @@ public class AssignmentAddServlet extends HttpServlet {
             int assignmentId = assignmentDAO.addAssignmentAndGetId(courseId, title, description, dueDate, null, null);
 
             if (assignmentId > 0) {
-                // 첨부파일 디렉토리 설정
-                String uploadPath = getServletContext().getRealPath("/uploads/assignments/" + assignmentId);
-                
                 // 첨부파일 처리
                 Collection<Part> fileParts = FileUtil.getFileParts(request, "files");
+                
                 if (fileParts != null && !fileParts.isEmpty()) {
-                    List<Map<String, String>> uploadedFiles = FileUtil.uploadMultipleFiles(fileParts, uploadPath);
+                    // 첨부파일 디렉토리 설정 - 상대 경로로 지정하여 일관성 유지
+                    String folderPath = "assignments/" + assignmentId;
+                    
+                    // 파일 업로드 및 정보 저장
+                    List<Map<String, String>> uploadedFiles = FileUtil.uploadMultipleFiles(fileParts, folderPath);
                     
                     if (!uploadedFiles.isEmpty()) {
                         AttachmentDAO attachmentDAO = new AttachmentDAO();
                         
                         for (Map<String, String> fileInfo : uploadedFiles) {
-                            attachmentDAO.addAttachment(
+                            // 디버깅 로그
+                            System.out.println("첨부파일 정보: " + fileInfo);
+                            
+                            // 첨부파일 정보 데이터베이스에 저장
+                            boolean success = attachmentDAO.addAttachment(
                                 assignmentId,
                                 fileInfo.get("originalFileName"),
                                 fileInfo.get("savedFileName"),
-                                fileInfo.get("filePath"),
+                                fileInfo.get("filePath"),  // filePath는 이미 상대 경로로 저장됨
                                 fileInfo.get("contentType")
                             );
+                            
+                            System.out.println("첨부파일 저장 " + (success ? "성공" : "실패") + ": " + fileInfo.get("originalFileName"));
                         }
                     }
                 }
