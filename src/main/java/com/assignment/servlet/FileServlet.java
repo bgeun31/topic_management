@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import com.assignment.util.FileUtil;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -17,8 +19,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class FileServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     
-    // 파일이 저장된 기본 경로
-    private static final String UPLOAD_DIRECTORY = "D:\\uploads\\sskm0116";
+    // 파일이 저장된 기본 경로 - 동적으로 설정
+    private String getUploadDirectory() {
+        // FileUtil의 경로 설정 사용
+        return FileUtil.getOSUploadPath();
+    }
     
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
@@ -36,29 +41,37 @@ public class FileServlet extends HttpServlet {
         // 파일 이름만 추출 (경로의 마지막 부분)
         String fileName = requestedFile.substring(requestedFile.lastIndexOf('/') + 1);
         
+        // 업로드 디렉토리 가져오기
+        String uploadDirectory = getUploadDirectory();
+        System.out.println("FileServlet: 업로드 디렉토리: " + uploadDirectory);
+        
         // 여러 위치에서 파일 찾기 시도
-        File file = new File(UPLOAD_DIRECTORY, fileName);
+        File file = new File(uploadDirectory, fileName);
         System.out.println("FileServlet: 찾는 파일: " + file.getAbsolutePath());
         
         if (!file.exists()) {
             System.out.println("FileServlet: 파일이 존재하지 않습니다: " + file.getAbsolutePath());
             
-            // uploads 디렉토리 내의 모든 파일 출력 (디버깅용)
-            File dir = new File(UPLOAD_DIRECTORY);
-            if (dir.exists() && dir.isDirectory()) {
-                System.out.println("FileServlet: uploads 디렉토리의 모든 파일 목록:");
-                File[] files = dir.listFiles();
-                if (files != null) {
-                    for (File f : files) {
-                        System.out.println(" - " + f.getName() + " (" + f.length() + " bytes)");
-                    }
-                } else {
-                    System.out.println("FileServlet: uploads 디렉토리가 비어있거나 접근할 수 없습니다.");
+            // 대체 경로 시도 - 웹 애플리케이션 내부의 uploads 폴더
+            String webappUploadsPath = getServletContext().getRealPath("/uploads");
+            file = new File(webappUploadsPath, fileName);
+            System.out.println("FileServlet: 대체 경로 시도: " + file.getAbsolutePath());
+            
+            if (!file.exists()) {
+                System.out.println("FileServlet: 대체 경로에서도 파일을 찾을 수 없습니다");
+                
+                // 두 번째 대체 경로 - uploads/{LOGIN_ID} 폴더
+                String webappLoginUploadsPath = getServletContext().getRealPath("/uploads/sskm0116");
+                file = new File(webappLoginUploadsPath, fileName);
+                System.out.println("FileServlet: 두 번째 대체 경로 시도: " + file.getAbsolutePath());
+                
+                if (!file.exists()) {
+                    // 파일을 찾을 수 없음
+                    System.out.println("FileServlet: 모든 경로에서 파일을 찾을 수 없습니다");
+                    response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    return;
                 }
             }
-            
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            return;
         }
         
         // 파일의 MIME 타입 설정

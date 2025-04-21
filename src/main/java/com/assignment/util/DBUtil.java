@@ -16,8 +16,8 @@ public class DBUtil {
     private static final String ROOT_URL =
         "jdbc:mysql://localhost:3306/?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true";
 
-    private static final String USER = "sskm0116";
-    private static final String PASS = "thdqhdrms";
+    private static final String USER = "root";
+    private static final String PASS = "";
 
     static {
         try {

@@ -26,6 +26,17 @@ public class FileUtil {
     // 로그인 ID (서버 환경에서 사용)
     private static final String LOGIN_ID = "sskm0116";
     
+    // 서블릿 컨텍스트를 저장할 정적 변수
+    private static jakarta.servlet.ServletContext servletContext;
+    
+    /**
+     * 서블릿 컨텍스트를 설정합니다. 애플리케이션 시작 시 InitServlet에서 호출해야 합니다.
+     * @param context 서블릿 컨텍스트
+     */
+    public static void setServletContext(jakarta.servlet.ServletContext context) {
+        servletContext = context;
+    }
+    
     // 초기화 블록: 클래스가 로드될 때 한 번 실행됩니다.
     static {
         try {
@@ -78,43 +89,58 @@ public class FileUtil {
     }
     
     /**
-     * OS에 따라 적절한 업로드 경로를 반환합니다.
-     * @return 운영체제에 맞는 업로드 경로
+     * 운영체제와 환경에 맞는 업로드 경로를 반환합니다.
+     * @return 파일 업로드 경로
      */
     public static String getOSUploadPath() {
+        // 외부 저장 경로 (항상 사용)
+        String externalPath = getDefaultUploadPath();
         
-        // 로그인 ID 상수 활용
-        String fixedPath;
-        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-        
-        if (isWindows) {
-            // Windows 환경 - sskm0116 폴더 추가
-            fixedPath = "D:\\uploads\\" + LOGIN_ID;
-        } else {
-            // Linux 환경
-            fixedPath = "/opt/tomcat/apache-tomcat-10.1.18/webapps/uploads/" + LOGIN_ID;
-        }
-        
-        System.out.println("고정 업로드 경로 사용: " + fixedPath);
-        
-        // 폴더 존재 확인 및 생성
-        File dir = new File(fixedPath);
-        if (!dir.exists()) {
-            boolean created = dir.mkdirs();
-            System.out.println("uploads 폴더 생성 " + (created ? "성공" : "실패") + ": " + fixedPath);
+        // 디렉토리 존재 확인 및 생성
+        File externalDir = new File(externalPath);
+        if (!externalDir.exists()) {
+            boolean created = externalDir.mkdirs();
+            System.out.println("외부 업로드 폴더 생성 " + (created ? "성공" : "실패") + ": " + externalPath);
             if (!created) {
-                System.out.println("폴더를 수동으로 생성해주세요: " + fixedPath);
-                
-                // 문제 해결 지침 출력
-                if (isWindows) {
-                    System.out.println("D:\\uploads\\" + LOGIN_ID + " 폴더가 없거나 접근할 수 없습니다.");
-                    System.out.println("1. D 드라이브에 'uploads\\" + LOGIN_ID + "' 폴더를 수동으로 생성하세요.");
-                    System.out.println("2. 폴더에 모든 사용자 쓰기 권한이 있는지 확인하세요.");
-                }
+                System.out.println("외부 폴더를 수동으로 생성해주세요: " + externalPath);
             }
         }
         
-        return fixedPath;
+        System.out.println("외부 업로드 경로: " + externalPath);
+        
+        // 내부 저장 경로 (웹 애플리케이션 내부)
+        String internalPath = null;
+        if (servletContext != null) {
+            try {
+                internalPath = servletContext.getRealPath("/uploads/" + LOGIN_ID);
+                System.out.println("내부 업로드 경로: " + internalPath);
+                
+                // 내부 디렉토리 생성
+                File internalDir = new File(internalPath);
+                if (!internalDir.exists()) {
+                    boolean created = internalDir.mkdirs();
+                    System.out.println("내부 업로드 폴더 생성 " + (created ? "성공" : "실패") + ": " + internalPath);
+                }
+            } catch (Exception e) {
+                System.out.println("ServletContext에서 실제 경로를 가져오는데 실패했습니다: " + e.getMessage());
+            }
+        }
+        
+        // 항상 외부 경로 반환 (파일 저장은 외부에 하고, 내부에는 복사)
+        return externalPath;
+    }
+    
+    /**
+     * OS에 따른 기본 업로드 경로를 반환합니다.
+     * @return 기본 업로드 경로
+     */
+    private static String getDefaultUploadPath() {
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        if (isWindows) {
+            return "D:\\uploads\\" + LOGIN_ID;
+        } else {
+            return "/opt/tomcat/apache-tomcat-10.1.18/webapps/uploads/" + LOGIN_ID;
+        }
     }
     
     /**
@@ -504,6 +530,9 @@ public class FileUtil {
                             File savedFile = new File(fullFilePath);
                             if (savedFile.exists() && savedFile.length() > 0) {
                                 System.out.println("✅ 파일 저장 확인: " + savedFile.length() + " bytes");
+                                
+                                // 파일을 웹 애플리케이션 내부로 복사 (WAR 파일에도 포함되도록)
+                                copyToWebApp(savedFile, savedFileName);
                             } else {
                                 System.out.println("❌ 파일이 존재하지 않거나 크기가 0입니다!");
                                 continue;
@@ -845,6 +874,41 @@ public class FileUtil {
             System.out.println("테스트 파일 저장 중 오류: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     * 파일을 업로드한 후 웹 애플리케이션 내부에도 복사합니다.
+     * @param externalFile 외부 경로에 저장된 파일
+     * @param fileName 파일 이름
+     */
+    private static void copyToWebApp(File externalFile, String fileName) {
+        if (servletContext == null || !externalFile.exists()) {
+            return;
+        }
+        
+        try {
+            String internalPath = servletContext.getRealPath("/uploads/" + LOGIN_ID);
+            if (internalPath != null) {
+                File internalDir = new File(internalPath);
+                if (!internalDir.exists()) {
+                    internalDir.mkdirs();
+                }
+                
+                File internalFile = new File(internalDir, fileName);
+                
+                // 파일 복사
+                java.nio.file.Files.copy(
+                    externalFile.toPath(),
+                    internalFile.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                );
+                
+                System.out.println("파일을 웹 애플리케이션 내부로 복사: " + internalFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            System.out.println("파일 복사 중 오류: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
