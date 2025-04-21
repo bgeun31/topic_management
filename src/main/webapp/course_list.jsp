@@ -124,7 +124,7 @@
                         <td class="actions">
                             <a href="course_detail.jsp?id=<%= course.getId() %>" class="btn-small">상세</a>
                             <a href="assignment_list.jsp?courseId=<%= course.getId() %>" class="btn-small">과제</a>
-                            <a href="unenroll.jsp?id=<%= course.getId() %>&csrfToken=<%= csrfToken %>" class="btn-small">수강 취소</a>
+                            <a href="unenroll.jsp?id=<%= course.getId() %>&csrfToken=<%= csrfToken %>" class="btn-small" style="background-color: #dc3545 !important; border-color: #c82333 !important; color: white !important;">수강 취소</a>
                         </td>
                     </tr>
                     <% } %>
@@ -159,7 +159,7 @@
                         <td><%= course.getCreatedDate() %></td>
                         <td class="actions">
                             <a href="course_detail.jsp?id=<%= course.getId() %>" class="btn-small">상세</a>
-                            <a href="enroll.jsp?id=<%= course.getId() %>" class="btn-small">수강 신청</a>
+                            <a href="enroll.jsp?id=<%= course.getId() %>" class="btn-small" style="background-color: #007bff !important; border-color: #0069d9 !important; color: white !important;">수강 신청</a>
                         </td>
                     </tr>
                     <% } %>

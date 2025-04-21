@@ -65,30 +65,30 @@ a[href*="assignment_list.jsp"].btn-small:hover:not(nav a):not(nav ul li a) {
 
 /* 수강 취소 버튼 */
 a[href*="unenroll.jsp"] {
-  background-color: #fff1f0 !important;
-  border-color: #ff4d4f !important;
-  color: #ff4d4f !important;
+  background-color: #dc3545 !important;
+  border-color: #c82333 !important;
+  color: white !important;
 }
 
 a[href*="unenroll.jsp"]:hover {
-  background-color: #ffccc7 !important;
-  border-color: #ff4d4f !important;
-  color: #ff4d4f !important;
+  background-color: #c82333 !important;
+  border-color: #bd2130 !important;
+  color: white !important;
 }
 
 /* 수강 신청 버튼 */
 a[href*="enroll.jsp"]:not(.btn),
 a[href*="enroll.jsp"].btn-small {
-  background-color: #f0f5ff !important;
-  border-color: #597ef7 !important;
-  color: #597ef7 !important;
+  background-color: #007bff !important;
+  border-color: #0069d9 !important;
+  color: white !important;
 }
 
 a[href*="enroll.jsp"]:hover:not(.btn),
 a[href*="enroll.jsp"].btn-small:hover {
-  background-color: #d6e4ff !important;
-  border-color: #597ef7 !important;
-  color: #597ef7 !important;
+  background-color: #0069d9 !important;
+  border-color: #0062cc !important;
+  color: white !important;
 }
 
 /* 제출 버튼 */
