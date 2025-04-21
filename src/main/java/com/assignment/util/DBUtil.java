@@ -10,7 +10,7 @@ import java.sql.Statement;
 public class DBUtil {
 
     private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-    private static final String DB_NAME = "";
+    private static final String DB_NAME = "sskm0116db";
     private static final String DB_URL =
         "jdbc:mysql://localhost:3306/" + DB_NAME + "?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true";
     private static final String ROOT_URL =
@@ -18,6 +18,15 @@ public class DBUtil {
 
     private static final String USER = "root";
     private static final String PASS = "";
+
+    static {
+        try {
+            Class.forName(JDBC_DRIVER);
+            System.out.println("✅ MySQL JDBC 드라이버 로드 성공");
+        } catch(ClassNotFoundException e) {
+            System.out.println("❌ MySQL JDBC 드라이버 로드 실패: " + e.getMessage());
+        }
+    }
 
     public static Connection getConnection() throws SQLException {
         try {
@@ -56,7 +65,7 @@ public class DBUtil {
             ) {
                 // 4. 테이블 생성
                 stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS sskm0116db.users (
+                    CREATE TABLE IF NOT EXISTS users (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         username VARCHAR(50) NOT NULL UNIQUE,
                         password VARCHAR(100) NOT NULL,
@@ -68,7 +77,7 @@ public class DBUtil {
                 """);
 
                 stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS sskm0116db.courses (
+                    CREATE TABLE IF NOT EXISTS courses (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         course_name VARCHAR(100) NOT NULL,
                         course_code VARCHAR(20) NOT NULL,
@@ -81,7 +90,7 @@ public class DBUtil {
                 """);
 
                 stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS sskm0116db.enrollments (
+                    CREATE TABLE IF NOT EXISTS enrollments (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         student_id INT NOT NULL,
                         course_id INT NOT NULL,
@@ -93,7 +102,7 @@ public class DBUtil {
                 """);
 
                 stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS sskm0116db.assignments (
+                    CREATE TABLE IF NOT EXISTS assignments (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         course_id INT NOT NULL,
                         title VARCHAR(200) NOT NULL,
@@ -107,7 +116,7 @@ public class DBUtil {
                 """);
 
                 stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS sskm0116db.submissions (
+                    CREATE TABLE IF NOT EXISTS submissions (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         assignment_id INT NOT NULL,
                         student_id INT NOT NULL,
@@ -124,7 +133,7 @@ public class DBUtil {
                 """);
 
                 stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS sskm0116db.notifications (
+                    CREATE TABLE IF NOT EXISTS notifications (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         user_id INT NOT NULL,
                         message TEXT NOT NULL,

@@ -107,3 +107,213 @@
     padding-bottom: 0;
   }
 }
+
+/* 반응형 스타일 */
+@media (max-width: 1200px) {
+  .container {
+    max-width: 100%;
+    padding: 0 1.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  header {
+    padding: 0.75rem 0;
+  }
+  
+  .course-cards {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  
+  main {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  header {
+    position: relative;
+  }
+  
+  header h1 {
+    margin-bottom: 0;
+    font-size: 1.5rem;
+  }
+  
+  .menu-toggle {
+    display: block;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    cursor: pointer;
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    transition: var(--transition);
+  }
+  
+  .menu-toggle:hover {
+    background-color: rgba(74, 108, 247, 0.1);
+  }
+  
+  nav ul {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 1rem;
+    background-color: #fff;
+    padding: 0.5rem 0;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    gap: 0;
+  }
+  
+  nav ul.show {
+    display: flex;
+  }
+  
+  nav ul li {
+    width: 100%;
+  }
+  
+  nav ul li a {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0;
+    justify-content: flex-start;
+  }
+  
+  nav ul li a:hover {
+    transform: none;
+    background-color: rgba(74, 108, 247, 0.05);
+  }
+  
+  nav ul li a.active {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  
+  .course-cards {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  
+  .welcome {
+    padding: 2rem 1rem;
+  }
+  
+  .welcome h2 {
+    font-size: 1.75rem;
+  }
+  
+  .data-table, 
+  .data-table thead, 
+  .data-table tbody, 
+  .data-table tr, 
+  .data-table th, 
+  .data-table td {
+    display: block;
+  }
+  
+  .data-table thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .data-table tr {
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .data-table td {
+    position: relative;
+    padding-left: 50%;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .data-table td:last-child {
+    border-bottom: none;
+  }
+  
+  .data-table td::before {
+    position: absolute;
+    left: 1rem;
+    width: 45%;
+    white-space: nowrap;
+    font-weight: 600;
+    content: attr(data-label);
+  }
+  
+  .form-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .form-footer .btn {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  header h1 {
+    font-size: 1.35rem;
+  }
+  
+  main {
+    padding: 1.25rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  .btn {
+    padding: 0.625rem 1rem;
+  }
+  
+  .form-container {
+    padding: 1.25rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .action-buttons .btn {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+  
+  .action-buttons .btn:last-child {
+    margin-bottom: 0;
+  }
+  
+  .welcome {
+    padding: 1.5rem 1rem;
+  }
+  
+  .welcome h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Dark Mode 준비 (추후 활성화) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 다크 모드 활성화 시 주석 해제
+    --primary-color: #6a8bff;
+    --primary-dark: #4a6cf7;
+    --light-color: #1e1e2d;
+    --dark-color: #f8f9fa;
+    */
+  }
+}

@@ -5,7 +5,7 @@
 <%@ include file="header.jsp" %> 
 <%
     // 로그인 확인
-    if (userType == null) {
+    if (session.getAttribute("userType") == null) {
         response.sendRedirect("login.jsp");
         return;
     }
@@ -73,8 +73,20 @@
             }
         }
     }
+    
+    // 페이지 제목 설정
+    request.setAttribute("pageTitle", course.getCourseName() + " - 과목 상세");
 %>
 
+
+<style>
+/* 인라인 스타일로 링크 밑줄 제거 */
+a, a:hover, a:visited, a:active, 
+.btn, .btn-small, .btn-primary, .btn-danger,
+.data-table a, .action-buttons a {
+    text-decoration: none !important;
+}
+</style>
 
 <main>
     <section class="content-header">
@@ -134,9 +146,9 @@
                                     <% if (userType.equals("professor")) { %>
                                         <td><%= assignment.getSubmissionCount() %>/<%= assignment.getTotalStudents() %></td>
                                         <td class="actions">
-                                            <a href="assignment_detail.jsp?id=<%= assignment.getId() %>" class="btn-small" title="상세보기"><i class="fas fa-eye"></i></a>
-                                            <a href="assignment_form.jsp?id=<%= assignment.getId() %>" class="btn-small" title="수정"><i class="fas fa-edit"></i></a>
-                                            <a href="assignment_delete.jsp?id=<%= assignment.getId() %>" class="btn-small btn-danger" title="삭제" onclick="return confirm('정말 삭제하시겠습니까?');"><i class="fas fa-trash-alt"></i></a>
+                                            <a href="assignment_detail.jsp?id=<%= assignment.getId() %>" class="btn-small">상세</a>
+                                            <a href="assignment_form.jsp?id=<%= assignment.getId() %>" class="btn-small">수정</a>
+                                            <a href="assignment_delete.jsp?id=<%= assignment.getId() %>" class="btn-small">삭제</a>
                                         </td>
                                     <% } else { %>
                                         <td>
@@ -147,11 +159,11 @@
                                             <% } %>
                                         </td>
                                         <td class="actions">
-                                            <a href="assignment_view.jsp?id=<%= assignment.getId() %>" class="btn-small" title="상세보기"><i class="fas fa-eye"></i></a>
+                                            <a href="assignment_view.jsp?id=<%= assignment.getId() %>" class="btn-small">보기</a>
                                             <% if (!assignment.isSubmitted()) { %>
-                                                <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn-small btn-primary" title="제출"><i class="fas fa-upload"></i> 제출</a>
+                                                <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn-small">제출</a>
                                             <% } else { %>
-                                                <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn-small" title="재제출"><i class="fas fa-sync-alt"></i> 재제출</a>
+                                                <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn-small">재제출</a>
                                             <% } %>
                                         </td>
                                     <% } %>

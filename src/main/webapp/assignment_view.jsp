@@ -2,9 +2,10 @@
 <%@ page import="java.util.*" %>
 <%@ page import="com.assignment.model.*" %>
 <%@ page import="com.assignment.dao.*" %>
+<%@ include file="header.jsp" %>
 <%
     // 로그인 확인
-    String userType = (String) session.getAttribute("userType");
+    
     if (userType == null) {
         response.sendRedirect("login.jsp");
         return;
@@ -52,129 +53,105 @@
         SubmissionDAO submissionDAO = new SubmissionDAO();
         submissions = submissionDAO.getSubmissionsByAssignment(Integer.parseInt(assignmentId));
     }
+    
+    // 페이지 제목 설정
+    request.setAttribute("pageTitle", "과제 상세 - 과제 관리 시스템");
 %>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>과제 상세 - 과제 관리 시스템</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>과제 관리 시스템</h1>
-            <nav>
-                <ul>
-                    <li><a href="index.jsp">홈</a></li>
-                    <% if (userType.equals("professor")) { %>
-                    <li><a href="course_management.jsp">과목 관리</a></li>
-                    <li><a href="assignment_management.jsp" class="active">과제 관리</a></li>
-                    <% } else { %>
-                    <li><a href="course_list.jsp">수강 과목</a></li>
-                    <li><a href="assignment_list.jsp" class="active">과제 목록</a></li>
-                    <% } %>
-                    <li><a href="logout.jsp">로그아웃</a></li>
-                </ul>
-            </nav>
-        </header>
+
         
-        <main>
-            <section class="content-header">
-                <h2>과제 상세</h2>
-                <% if (userType.equals("professor")) { %>
-                <a href="assignment_management.jsp?courseId=<%= assignment.getCourseId() %>" class="btn">과제 목록으로</a>
-                <% } else { %>
-                <a href="assignment_list.jsp?courseId=<%= assignment.getCourseId() %>" class="btn">과제 목록으로</a>
-                <% } %>
-            </section>
-            
-            <section class="assignment-info">
-                <h3>과제 정보</h3>
-                <div class="info-box">
-                    <p><strong>과목:</strong> <%= course.getCourseName() %> (<%= course.getSemester() %>)</p>
-                    <p><strong>제목:</strong> <%= assignment.getTitle() %></p>
-                    <p><strong>등록일:</strong> <%= assignment.getCreatedDate() %></p>
-                    <p><strong>마감일:</strong> <%= assignment.getDueDate() %></p>
-                    <p><strong>설명:</strong> <%= assignment.getDescription() %></p>
-                    <% if (assignment.getFileName() != null && !assignment.getFileName().isEmpty()) { %>
-                    <p><strong>첨부 파일:</strong> <a href="download.jsp?type=assignment&id=<%= assignment.getId() %>"><%= assignment.getFileName() %></a></p>
-                    <% } %>
-                </div>
-            </section>
-            
-            <% if (userType.equals("student")) { %>
-                <section class="submission-info">
-                    <h3>제출 정보</h3>
-                    <% if (submission != null) { %>
-                    <div class="info-box">
-                        <p><strong>제출일:</strong> <%= submission.getSubmissionDate() %></p>
-                        <p><strong>내용:</strong> <%= submission.getContent() %></p>
-                        <% if (submission.getFileName() != null && !submission.getFileName().isEmpty()) { %>
-                        <p><strong>첨부 파일:</strong> <a href="download.jsp?type=submission&id=<%= submission.getId() %>"><%= submission.getFileName() %></a></p>
-                        <% } %>
-                        <% if (submission.getGrade() != null && !submission.getGrade().isEmpty()) { %>
-                        <p><strong>성적:</strong> <%= submission.getGrade() %></p>
-                        <% if (submission.getFeedback() != null && !submission.getFeedback().isEmpty()) { %>
-                        <p><strong>피드백:</strong> <%= submission.getFeedback() %></p>
-                        <% } %>
-                        <% } %>
-                    </div>
-                    <div class="action-buttons">
-                        <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn">재제출</a>
-                    </div>
-                    <% } else { %>
-                    <p>아직 제출하지 않았습니다.</p>
-                    <div class="action-buttons">
-                        <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn btn-primary">제출하기</a>
-                    </div>
-                    <% } %>
-                </section>
-            <% } else if (userType.equals("professor")) { %>
-                <section class="submissions-list">
-                    <h3>제출 목록</h3>
-                    <% if (submissions == null || submissions.isEmpty()) { %>
-                    <p>아직 제출된 과제가 없습니다.</p>
-                    <% } else { %>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>학생</th>
-                                <th>제출일</th>
-                                <th>파일</th>
-                                <th>성적</th>
-                                <th>관리</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% for (Submission sub : submissions) { %>
-                            <tr>
-                                <td><%= sub.getStudentName() %></td>
-                                <td><%= sub.getSubmissionDate() %></td>
-                                <td>
-                                    <% if (sub.getFileName() != null && !sub.getFileName().isEmpty()) { %>
-                                    <a href="download.jsp?type=submission&id=<%= sub.getId() %>"><%= sub.getFileName() %></a>
-                                    <% } else { %>
-                                    -
-                                    <% } %>
-                                </td>
-                                <td><%= sub.getGrade() != null ? sub.getGrade() : "미채점" %></td>
-                                <td>
-                                    <a href="submission_view.jsp?id=<%= sub.getId() %>" class="btn-small">상세</a>
-                                    <a href="grade_form.jsp?id=<%= sub.getId() %>" class="btn-small">채점</a>
-                                </td>
-                            </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                    <% } %>
-                </section>
+<main>
+    <section class="content-header">
+        <h2><i class="fas fa-clipboard-check"></i> 과제 상세</h2>
+        <% if (userType.equals("professor")) { %>
+        <a href="assignment_management.jsp?courseId=<%= assignment.getCourseId() %>" class="btn">과제 목록으로</a>
+        <% } else { %>
+        <a href="assignment_list.jsp?courseId=<%= assignment.getCourseId() %>" class="btn">과제 목록으로</a>
+        <% } %>
+    </section>
+    
+    <section class="assignment-info">
+        <h3><i class="fas fa-info-circle"></i> 과제 정보</h3>
+        <div class="info-box">
+            <p><i class="fas fa-book"></i> <strong>과목:</strong> <%= course.getCourseName() %> (<%= course.getSemester() %>)</p>
+            <p><i class="fas fa-heading"></i> <strong>제목:</strong> <%= assignment.getTitle() %></p>
+            <p><i class="fas fa-calendar-plus"></i> <strong>등록일:</strong> <%= assignment.getCreatedDate() %></p>
+            <p><i class="fas fa-calendar-times"></i> <strong>마감일:</strong> <%= assignment.getDueDate() %></p>
+            <p><i class="fas fa-align-left"></i> <strong>설명:</strong> <%= assignment.getDescription() %></p>
+            <% if (assignment.getFileName() != null && !assignment.getFileName().isEmpty()) { %>
+            <p><i class="fas fa-paperclip"></i> <strong>첨부 파일:</strong> <a href="download.jsp?type=assignment&id=<%= assignment.getId() %>"><%= assignment.getFileName() %></a></p>
             <% } %>
-        </main>
-        
-        <footer>
-            <p>&copy; 2025 과제 관리 시스템. All rights reserved.</p>
-        </footer>
-    </div>
-</body>
-</html>
+        </div>
+    </section>
+    
+    <% if (userType.equals("student")) { %>
+        <section class="submission-info">
+            <h3><i class="fas fa-upload"></i> 제출 정보</h3>
+            <% if (submission != null) { %>
+            <div class="info-box">
+                <p><i class="fas fa-calendar-check"></i> <strong>제출일:</strong> <%= submission.getSubmissionDate() %></p>
+                <p><i class="fas fa-file-alt"></i> <strong>내용:</strong> <%= submission.getContent() %></p>
+                <% if (submission.getFileName() != null && !submission.getFileName().isEmpty()) { %>
+                <p><i class="fas fa-paperclip"></i> <strong>첨부 파일:</strong> <a href="download.jsp?type=submission&id=<%= submission.getId() %>"><%= submission.getFileName() %></a></p>
+                <% } %>
+                <% if (submission.getGrade() != null && !submission.getGrade().isEmpty()) { %>
+                <p><i class="fas fa-star"></i> <strong>성적:</strong> <%= submission.getGrade() %></p>
+                <% if (submission.getFeedback() != null && !submission.getFeedback().isEmpty()) { %>
+                <p><i class="fas fa-comment"></i> <strong>피드백:</strong> <%= submission.getFeedback() %></p>
+                <% } %>
+                <% } %>
+            </div>
+            <div class="action-buttons">
+                <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn-small">재제출</a>
+            </div>
+            <% } else { %>
+            <p>아직 제출하지 않았습니다.</p>
+            <div class="action-buttons">
+                <a href="submission_form.jsp?id=<%= assignment.getId() %>" class="btn-small">제출하기</a>
+            </div>
+            <% } %>
+        </section>
+    <% } else if (userType.equals("professor")) { %>
+        <section class="submissions-list">
+            <h3><i class="fas fa-list"></i> 제출 목록</h3>
+            <% if (submissions == null || submissions.isEmpty()) { %>
+            <p>아직 제출된 과제가 없습니다.</p>
+            <% } else { %>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>학생</th>
+                            <th>제출일</th>
+                            <th>파일</th>
+                            <th>성적</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% for (Submission sub : submissions) { %>
+                        <tr>
+                            <td><%= sub.getStudentName() %></td>
+                            <td><%= sub.getSubmissionDate() %></td>
+                            <td>
+                                <% if (sub.getFileName() != null && !sub.getFileName().isEmpty()) { %>
+                                <a href="download.jsp?type=submission&id=<%= sub.getId() %>"><%= sub.getFileName() %></a>
+                                <% } else { %>
+                                -
+                                <% } %>
+                            </td>
+                            <td><%= sub.getGrade() != null ? sub.getGrade() : "미채점" %></td>
+                            <td class="actions">
+                                <a href="submission_view.jsp?id=<%= sub.getId() %>" class="btn-small">상세</a>
+                                <a href="grade_form.jsp?id=<%= sub.getId() %>" class="btn-small">채점</a>
+                            </td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            <% } %>
+        </section>
+    <% } %>
+</main>
+
+<%@ include file="footer.jsp" %>

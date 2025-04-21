@@ -17,6 +17,7 @@
     String assignmentId = request.getParameter("id");
     boolean isEdit = assignmentId != null && !assignmentId.isEmpty();
     String title = isEdit ? "과제 수정" : "새 과제 등록";
+    request.setAttribute("pageTitle", title + " - 과제 관리 시스템");
 
     Assignment assignment = null;
     if (isEdit) {
@@ -37,26 +38,17 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title><%= title %> - 과제 관리 시스템</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/button-override.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 <div class="container">
-    <header>
-        <h1>과제 관리 시스템</h1>
-        <nav>
-            <ul>
-                <li><a href="index.jsp">홈</a></li>
-                <li><a href="course_management.jsp">과목 관리</a></li>
-                <li><a href="assignment_management.jsp" class="active">과제 관리</a></li>
-                <li><a href="logout.jsp">로그아웃</a></li>
-            </ul>
-        </nav>
-    </header>
+    <jsp:include page="header.jsp" />
 
     <main>
         <section class="form-container">
-            <h2><%= title %></h2>
+            <h2><i class="fas fa-edit"></i> <%= title %></h2>
             <form action="<%= isEdit ? "assignmentUpdate" : "assignmentAdd" %>" method="post" enctype="multipart/form-data">
 
                 <% if (isEdit) { %>
@@ -100,16 +92,18 @@
                 </div>
 
                 <div class="form-group">
-                    <button type="submit" class="btn"><%= isEdit ? "수정" : "등록" %></button>
-                    <a href="assignment_management.jsp" class="btn btn-secondary">취소</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas <%= isEdit ? "fa-save" : "fa-plus" %>"></i> <%= isEdit ? "수정" : "등록" %>
+                    </button>
+                    <a href="assignment_management.jsp" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> 취소
+                    </a>
                 </div>
             </form>
         </section>
     </main>
 
-    <footer>
-        <p>&copy; 2025 과제 관리 시스템. All rights reserved.</p>
-    </footer>
+    <jsp:include page="footer.jsp" />
 </div>
 </body>
 </html>

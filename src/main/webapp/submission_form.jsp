@@ -2,9 +2,10 @@
 <%@ page import="java.util.*" %>
 <%@ page import="com.assignment.model.*" %>
 <%@ page import="com.assignment.dao.*" %>
+<%@ include file="header.jsp" %>
 <%
     // 로그인 확인 및 학생 권한 확인
-    String userType = (String) session.getAttribute("userType");
+   
     if (userType == null || !userType.equals("student")) {
         response.sendRedirect("login.jsp");
         return;
@@ -41,75 +42,55 @@
     SubmissionDAO submissionDAO = new SubmissionDAO();
     Submission submission = submissionDAO.getSubmission(studentId, Integer.parseInt(assignmentId));
     boolean isResubmission = submission != null;
+    
+    // 페이지 제목 설정
+    request.setAttribute("pageTitle", (isResubmission ? "과제 재제출" : "과제 제출") + " - 과제 관리 시스템");
 %>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>과제 제출 - 과제 관리 시스템</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>과제 관리 시스템</h1>
-            <nav>
-                <ul>
-                    <li><a href="index.jsp">홈</a></li>
-                    <li><a href="course_list.jsp">수강 과목</a></li>
-                    <li><a href="assignment_list.jsp" class="active">과제 목록</a></li>
-                    <li><a href="logout.jsp">로그아웃</a></li>
-                </ul>
-            </nav>
-        </header>
+
         
-        <main>
-            <section class="content-header">
-                <h2><%= isResubmission ? "과제 재제출" : "과제 제출" %></h2>
-            </section>
+<main>
+    <section class="content-header">
+        <h2><i class="fas fa-upload"></i> <%= isResubmission ? "과제 재제출" : "과제 제출" %></h2>
+        <a href="assignment_list.jsp?courseId=<%= assignment.getCourseId() %>" class="btn"><i class="fas fa-arrow-left"></i> 목록으로</a>
+    </section>
+    
+    <section class="assignment-info">
+        <h3><i class="fas fa-info-circle"></i> 과제 정보</h3>
+        <div class="info-box">
+            <p><i class="fas fa-heading"></i> <strong>제목:</strong> <%= assignment.getTitle() %></p>
+            <p><i class="fas fa-calendar-times"></i> <strong>마감일:</strong> <%= assignment.getDueDate() %></p>
+            <p><i class="fas fa-align-left"></i> <strong>설명:</strong> <%= assignment.getDescription() %></p>
+            <% if (assignment.getFileName() != null && !assignment.getFileName().isEmpty()) { %>
+            <p><i class="fas fa-paperclip"></i> <strong>첨부 파일:</strong> <a href="download.jsp?type=assignment&id=<%= assignment.getId() %>"><%= assignment.getFileName() %></a></p>
+            <% } %>
+        </div>
+    </section>
+    
+    <section class="form-container">
+        <h3><i class="fas fa-paper-plane"></i> <%= isResubmission ? "과제 재제출" : "과제 제출" %></h3>
+        <form action="submissionProcess" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="assignmentId" value="<%= assignment.getId() %>">
+            <input type="hidden" name="courseId" value="<%= assignment.getCourseId() %>">
             
-            <section class="assignment-info">
-                <h3>과제 정보</h3>
-                <div class="info-box">
-                    <p><strong>제목:</strong> <%= assignment.getTitle() %></p>
-                    <p><strong>마감일:</strong> <%= assignment.getDueDate() %></p>
-                    <p><strong>설명:</strong> <%= assignment.getDescription() %></p>
-                    <% if (assignment.getFileName() != null && !assignment.getFileName().isEmpty()) { %>
-                    <p><strong>첨부 파일:</strong> <a href="download.jsp?type=assignment&id=<%= assignment.getId() %>"><%= assignment.getFileName() %></a></p>
-                    <% } %>
-                </div>
-            </section>
+            <div class="form-group">
+                <label for="content"><i class="fas fa-file-alt"></i> 내용:</label>
+                <textarea id="content" name="content" rows="6" required><%= isResubmission ? submission.getContent() : "" %></textarea>
+            </div>
             
-            <section class="form-container">
-                <h3><%= isResubmission ? "과제 재제출" : "과제 제출" %></h3>
-                <form action="submissionProcess" method="post" enctype="multipart/form-data">
-				    <input type="hidden" name="assignmentId" value="<%= assignment.getId() %>">
-				    <input type="hidden" name="courseId" value="<%= assignment.getCourseId() %>"> <!-- 추가됨 -->
-				    
-				    <div class="form-group">
-				        <label for="content">내용:</label>
-				        <textarea id="content" name="content" rows="6" required><%= isResubmission ? submission.getContent() : "" %></textarea>
-				    </div>
-				    
-				    <div class="form-group">
-				        <label for="file">첨부 파일:</label>
-				        <input type="file" id="file" name="file">
-				        <% if (isResubmission && submission.getFileName() != null && !submission.getFileName().isEmpty()) { %>
-				        <p class="file-info">현재 파일: <%= submission.getFileName() %></p>
-				        <% } %>
-				    </div>
-				    
-				    <div class="form-group">
-				        <button type="submit" class="btn">제출</button>
-				        <a href="assignment_list.jsp?courseId=<%= assignment.getCourseId() %>" class="btn btn-secondary">취소</a>
-				    </div>
-				</form>
-            </section>
-        </main>
-        
-        <footer>
-            <p>&copy; 2025 과제 관리 시스템. All rights reserved.</p>
-        </footer>
-    </div>
-</body>
-</html>
+            <div class="form-group">
+                <label for="file"><i class="fas fa-paperclip"></i> 첨부 파일:</label>
+                <input type="file" id="file" name="file">
+                <% if (isResubmission && submission.getFileName() != null && !submission.getFileName().isEmpty()) { %>
+                <p class="file-info">현재 파일: <%= submission.getFileName() %></p>
+                <% } %>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" class="btn">제출</button>
+                <a href="assignment_list.jsp?courseId=<%= assignment.getCourseId() %>" class="btn btn-secondary">취소</a>
+            </div>
+        </form>
+    </section>
+</main>
+
+<%@ include file="footer.jsp" %>
