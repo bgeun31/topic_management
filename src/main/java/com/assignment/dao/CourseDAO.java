@@ -236,4 +236,37 @@ public class CourseDAO {
 
         return courses;
     }
+
+    /**
+     * 해당 과목이 특정 교수의 것인지 확인합니다.
+     * @param professorId 교수 ID
+     * @param courseId 과목 ID
+     * @return 해당 과목이 해당 교수의 것인지 여부
+     */
+    public boolean isProfessorOfCourse(int professorId, int courseId) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        boolean result = false;
+        
+        try {
+            conn = DBUtil.getConnection();
+            String sql = "SELECT COUNT(*) AS count FROM courses WHERE id = ? AND professor_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, courseId);
+            pstmt.setInt(2, professorId);
+            
+            rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                result = rs.getInt("count") > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DBUtil.closeResources(rs, pstmt, conn);
+        }
+        
+        return result;
+    }
 }

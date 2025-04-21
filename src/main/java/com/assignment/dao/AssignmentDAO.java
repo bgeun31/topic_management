@@ -198,4 +198,50 @@ public class AssignmentDAO {
         
         return id;
     }
+    
+    /**
+     * 과제를 추가하고 생성된 ID를 반환합니다.
+     * @param courseId 과정 ID
+     * @param title 과제 제목
+     * @param description 과제 설명
+     * @param dueDate 마감일
+     * @param fileName 파일명 (선택 사항)
+     * @param filePath 파일 경로 (선택 사항)
+     * @return 생성된 과제 ID 또는 실패 시 -1
+     */
+    public int addAssignmentAndGetId(int courseId, String title, String description, String dueDate, 
+                                    String fileName, String filePath) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        int generatedId = -1;
+        
+        try {
+            conn = DBUtil.getConnection();
+            String sql = "INSERT INTO assignments (course_id, title, description, created_date, due_date, file_name, file_path) " +
+                         "VALUES (?, ?, ?, NOW(), ?, ?, ?)";
+            pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            pstmt.setInt(1, courseId);
+            pstmt.setString(2, title);
+            pstmt.setString(3, description);
+            pstmt.setString(4, dueDate);
+            pstmt.setString(5, fileName);
+            pstmt.setString(6, filePath);
+            
+            int affectedRows = pstmt.executeUpdate();
+            
+            if (affectedRows > 0) {
+                rs = pstmt.getGeneratedKeys();
+                if (rs.next()) {
+                    generatedId = rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            DBUtil.closeResources(rs, pstmt, conn);
+        }
+        
+        return generatedId;
+    }
 }

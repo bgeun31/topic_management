@@ -3,6 +3,7 @@
 <%@ page import="java.net.URLEncoder" %>
 <%@ page import="com.assignment.dao.*" %>
 <%@ page import="com.assignment.model.*" %>
+<%@ page import="java.util.Map" %>
 <%
     request.setCharacterEncoding("UTF-8");
     String userType = (String) session.getAttribute("userType");
@@ -36,6 +37,42 @@
             } else {
                 response.sendRedirect("index.jsp");
                 return;
+            }
+        }
+    } else if ("attachment".equals(type)) {
+        // 첨부파일 정보 가져오기
+        AttachmentDAO attachmentDAO = new AttachmentDAO();
+        Map<String, Object> attachment = attachmentDAO.getAttachmentAsMap(id);
+        
+        if (attachment != null) {
+            // 과제 ID로 권한 확인
+            int assignmentId = (Integer) attachment.get("assignmentId");
+            AssignmentDAO assignmentDAO = new AssignmentDAO();
+            Assignment assignment = assignmentDAO.getAssignmentById(assignmentId);
+            
+            if (assignment != null) {
+                // 교수이거나 해당 과제가 속한 과목을 수강 중인 학생인지 확인
+                boolean hasPermission = false;
+                
+                if (userType.equals("professor")) {
+                    // 교수인 경우 해당 과제를 등록한 교수인지 확인
+                    CourseDAO courseDAO = new CourseDAO();
+                    Course course = courseDAO.getCourseById(assignment.getCourseId());
+                    hasPermission = (course != null && course.getProfessorId() == (Integer) session.getAttribute("userId"));
+                } else if (userType.equals("student")) {
+                    // 학생인 경우 해당 과제가 속한 과목을 수강 중인지 확인
+                    int studentId = (Integer) session.getAttribute("userId");
+                    EnrollmentDAO enrollmentDAO = new EnrollmentDAO();
+                    hasPermission = enrollmentDAO.isEnrolled(studentId, assignment.getCourseId());
+                }
+                
+                if (hasPermission) {
+                    fileName = (String) attachment.get("originalFileName");
+                    filePath = (String) attachment.get("filePath");
+                } else {
+                    response.sendRedirect("index.jsp?error=permission");
+                    return;
+                }
             }
         }
     }

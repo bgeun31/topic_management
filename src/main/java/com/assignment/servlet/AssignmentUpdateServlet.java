@@ -1,6 +1,7 @@
 package com.assignment.servlet;
 
 import com.assignment.dao.AssignmentDAO;
+import com.assignment.dao.AttachmentDAO;
 import com.assignment.dao.CourseDAO;
 import com.assignment.model.Assignment;
 import com.assignment.model.Course;
@@ -12,9 +13,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 @WebServlet("/assignmentUpdate")
-@MultipartConfig(maxFileSize = 10 * 1024 * 1024)
+@MultipartConfig(maxFileSize = 10 * 1024 * 1024, maxRequestSize = 50 * 1024 * 1024)
 public class AssignmentUpdateServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -36,6 +41,7 @@ public class AssignmentUpdateServlet extends HttpServlet {
         String title = request.getParameter("title");
         String description = request.getParameter("description");
         String dueDate = request.getParameter("dueDate");
+        String removeFile = request.getParameter("removeFile");
 
         CourseDAO courseDAO = new CourseDAO();
         Course course = courseDAO.getCourseById(courseId);
@@ -51,28 +57,68 @@ public class AssignmentUpdateServlet extends HttpServlet {
             return;
         }
 
-        // 파일 업로드 처리
-        String fileName = assignment.getFileName();
-        String filePath = assignment.getFilePath();
-
-        String newPath = FileUtil.uploadFile(request, "file", "assignments");
-        if (newPath != null) {
-            filePath = newPath;
-            fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
+        // 기존 파일 삭제 처리
+        if (removeFile != null && removeFile.equals("true")) {
+            if (assignment.getFileName() != null && !assignment.getFileName().isEmpty()) {
+                FileUtil.deleteFile(request, assignment.getFilePath());
+                assignment.setFileName(null);
+                assignment.setFilePath(null);
+            }
         }
 
+        // 기본 필드 업데이트
         assignment.setTitle(title);
         assignment.setDescription(description);
         assignment.setDueDate(dueDate);
-        assignment.setFileName(fileName);
-        assignment.setFilePath(filePath);
+
+        // 새 첨부 파일 처리
+        try {
+            Collection<Part> parts = request.getParts();
+            Collection<Part> fileParts = new ArrayList<>();
+            
+            // files 필드만 필터링
+            for (Part part : parts) {
+                if (part.getName().equals("files") && part.getSize() > 0 && 
+                    part.getSubmittedFileName() != null && !part.getSubmittedFileName().isEmpty()) {
+                    fileParts.add(part);
+                }
+            }
+            
+            if (!fileParts.isEmpty()) {
+                // 첨부파일 저장
+                List<Map<String, String>> uploadedFiles = FileUtil.uploadMultipleFiles(fileParts, "uploads/assignments");
+                
+                if (uploadedFiles != null && !uploadedFiles.isEmpty()) {
+                    // 파일이 업로드된 경우 첨부파일 DB에 저장
+                    AttachmentDAO attachmentDAO = new AttachmentDAO();
+                    
+                    for (Map<String, String> fileInfo : uploadedFiles) {
+                        String originalFileName = fileInfo.get("name");
+                        String savedFileName = fileInfo.get("savedFileName");
+                        String filePath = fileInfo.get("path");
+                        String contentType = fileInfo.get("type");
+                        
+                        attachmentDAO.addAttachment(
+                            assignmentId,
+                            originalFileName, 
+                            savedFileName,
+                            filePath,
+                            contentType
+                        );
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 파일 업로드 실패해도 기본 정보는 저장
+        }
 
         boolean updated = assignmentDAO.updateAssignment(assignment);
 
         if (updated) {
-            response.sendRedirect("assignment_management.jsp?courseId=" + courseId + "&success=update");
+            response.sendRedirect("assignment_detail.jsp?id=" + assignmentId);
         } else {
-            response.sendRedirect("assignment_form.jsp?id=" + assignmentId + "&error=1");
+            response.sendRedirect("assignment_edit.jsp?id=" + assignmentId + "&error=1");
         }
     }
 }

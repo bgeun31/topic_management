@@ -144,11 +144,44 @@ public class DBUtil {
                     )
                 """);
 
+                // 첨부파일 테이블 생성
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS attachments (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        assignment_id INT NOT NULL,
+                        original_file_name VARCHAR(255) NOT NULL,
+                        saved_file_name VARCHAR(255) NOT NULL,
+                        file_path VARCHAR(255) NOT NULL,
+                        content_type VARCHAR(100),
+                        upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
+                    )
+                """);
+
                 System.out.println("✅ 데이터베이스 및 테이블 초기화 완료");
             }
 
         } catch (SQLException e) {
             System.out.println("❌ DB 초기화 실패: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 리소스 닫기
+     */
+    public static void closeResources(ResultSet rs, Statement stmt, Connection conn) {
+        try {
+            if (rs != null) {
+                rs.close();
+            }
+            if (stmt != null) {
+                stmt.close();
+            }
+            if (conn != null) {
+                conn.close();
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }

@@ -2,6 +2,7 @@
 <%@ page import="java.util.*" %>
 <%@ page import="com.assignment.model.*" %>
 <%@ page import="com.assignment.dao.*" %>
+<%@ page import="com.assignment.util.FileUtil" %>
 <%@ include file="header.jsp" %>
 <%
     // 로그인 확인
@@ -67,6 +68,10 @@
         }
     }
     
+    // 첨부파일 정보 가져오기
+    AttachmentDAO attachmentDAO = new AttachmentDAO();
+    List<Attachment> attachments = attachmentDAO.getAttachmentsByRef(Integer.parseInt(assignmentId), "assignment");
+    
     // 제출 정보 가져오기
     List<Submission> submissions = new ArrayList<>();
     Submission studentSubmission = null;
@@ -118,8 +123,30 @@
             <p><i class="fas fa-calendar-plus"></i> <strong>등록일:</strong> <%= assignment.getCreatedDate() %></p>
             <p><i class="fas fa-calendar-times"></i> <strong>마감일:</strong> <%= assignment.getDueDate() %></p>
             <p><i class="fas fa-align-left"></i> <strong>설명:</strong> <%= assignment.getDescription() %></p>
+            
             <% if (assignment.getFileName() != null && !assignment.getFileName().isEmpty()) { %>
                 <p><i class="fas fa-file-alt"></i> <strong>첨부 파일:</strong> <a href="download.jsp?type=assignment&id=<%= assignment.getId() %>"><%= assignment.getFileName() %></a></p>
+            <% } %>
+            
+            <% if (!attachments.isEmpty()) { %>
+                <div class="attachment-list">
+                    <p><i class="fas fa-paperclip"></i> <strong>첨부파일 목록:</strong></p>
+                    <ul class="files-list">
+                        <% for (Attachment attachment : attachments) { %>
+                            <li>
+                                <% 
+                                String contentType = attachment.getFileType();
+                                String fileName = attachment.getFileName();
+                                String iconClass = FileUtil.getFileIconClass(contentType, fileName);
+                                %>
+                                <i class="<%= iconClass %>"></i>
+                                <a href="download.jsp?type=attachment&id=<%= attachment.getId() %>">
+                                    <%= attachment.getFileName() %>
+                                </a>
+                            </li>
+                        <% } %>
+                    </ul>
+                </div>
             <% } %>
         </div>
     </section>
@@ -182,8 +209,8 @@
                                     </td>
                                     <td><%= submission.getGrade() != null && !submission.getGrade().isEmpty() ? submission.getGrade() : "미채점" %></td>
                                     <td class="actions">
-                                        <a href="submission_view.jsp?id=<%= submission.getId() %>" class="btn-small" title="상세보기"><i class="fas fa-eye"></i></a>
-                                        <a href="grade_form.jsp?id=<%= submission.getId() %>" class="btn-small" title="채점"><i class="fas fa-star"></i></a>
+                                        <a href="submission_view.jsp?id=<%= submission.getId() %>" class="btn-small">상세</a>
+                                        <a href="grade_form.jsp?id=<%= submission.getId() %>" class="btn-small">채점</a>
                                     </td>
                                 </tr>
                             <% } %>
