@@ -147,9 +147,10 @@
                                 <div class="attachment-card-content">
                                     <% if (isImage) { %>
                                         <div class="attachment-preview">
-                                            <img src="<%= com.assignment.util.FileUtil.getDirectAttachmentUrl(request, attachment) %>" 
+                                            <img src="<%= request.getContextPath() %>/files/<%= attachment.getSavedFileName() != null ? attachment.getSavedFileName() : attachment.getFileName() %>" 
                                                 alt="<%= fileName %>" 
-                                                class="card-image" />
+                                                class="card-image" 
+                                                onerror="this.onerror=null; this.src='<%= request.getContextPath() %>/uploads/<%= attachment.getSavedFileName() != null ? attachment.getSavedFileName() : attachment.getFileName() %>'; console.log('이미지 로드 오류, 직접 경로로 시도');" />
                                         </div>
                                     <% } else { %>
                                         <div class="attachment-icon">
