@@ -1,0 +1,109 @@
+/* 모바일 반응형 디자인 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+
+  header {
+    padding: 10px 0;
+  }
+
+  header h1 {
+    font-size: 20px;
+  }
+
+  nav ul {
+    flex-direction: column;
+  }
+
+  nav ul li {
+    margin-right: 0;
+    margin-bottom: 5px;
+  }
+
+  .form-container {
+    padding: 15px;
+  }
+
+  .btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .course-list {
+    display: block;
+  }
+
+  .course-list li {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 15px;
+  }
+
+  .data-table {
+    font-size: 14px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .notification-item {
+    flex-direction: column;
+  }
+
+  .notification-actions {
+    margin-top: 10px;
+  }
+}
+
+/* 태블릿 반응형 디자인 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding: 0 20px;
+  }
+
+  .course-list li {
+    width: calc(50% - 15px);
+  }
+}
+
+/* 모바일 메뉴 토글 버튼 */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #3f51b5;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+
+  nav ul {
+    display: none;
+    width: 100%;
+  }
+
+  nav ul.show {
+    display: flex;
+  }
+
+  header {
+    position: relative;
+    padding-bottom: 0;
+  }
+}
