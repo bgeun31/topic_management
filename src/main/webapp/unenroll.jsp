@@ -33,41 +33,34 @@
                 success = enrollmentDAO.unenrollCourse(studentId, courseId);
                 if (success) {
                     message = "성공적으로 수강을 취소했습니다.";
+                    // 메시지를 세션에 저장
+                    session.setAttribute("alertMessage", message);
+                    session.setAttribute("alertType", "success");
                 } else {
                     message = "수강 취소 중 오류가 발생했습니다.";
+                    // 메시지를 세션에 저장
+                    session.setAttribute("alertMessage", message);
+                    session.setAttribute("alertType", "error");
                 }
             } else {
                 message = "해당 과목에 수강 신청되어 있지 않습니다.";
+                // 메시지를 세션에 저장
+                session.setAttribute("alertMessage", message);
+                session.setAttribute("alertType", "error");
             }
         } catch (NumberFormatException e) {
             message = "잘못된 과목 ID입니다.";
+            // 메시지를 세션에 저장
+            session.setAttribute("alertMessage", message);
+            session.setAttribute("alertType", "error");
         }
     } else {
         message = "과목 ID가 제공되지 않았습니다.";
+        // 메시지를 세션에 저장
+        session.setAttribute("alertMessage", message);
+        session.setAttribute("alertType", "error");
     }
     
-    // 페이지 제목 설정
-    request.setAttribute("pageTitle", "수강 취소 - 과제 관리 시스템");
-%>
-
-<%@ include file="header.jsp" %>
-
-<main>
-    <section class="content-header">
-        <h2><i class="fas fa-book"></i> 수강 취소</h2>
-    </section>
-    
-    <section class="form-container">
-        <div class="notification <%= success ? "success" : "error" %>">
-            <p><%= message %></p>
-        </div>
-        
-        <div class="action-links">
-            <a href="course_list.jsp" class="btn btn-primary">
-                <i class="fas fa-arrow-left"></i> 수강 과목 목록으로
-            </a>
-        </div>
-    </section>
-</main>
-
-<%@ include file="footer.jsp" %> 
+    // 수강 과목 페이지로 리다이렉트
+    response.sendRedirect("course_list.jsp");
+%> 

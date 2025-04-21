@@ -19,6 +19,16 @@
     CourseDAO courseDAO = new CourseDAO();
     List<Course> availableCourses = courseDAO.getAvailableCourses(studentId);
     
+    // 알림 메시지 가져오기
+    String alertMessage = (String) session.getAttribute("alertMessage");
+    String alertType = (String) session.getAttribute("alertType");
+    
+    // 메시지를 표시했으면 세션에서 제거
+    if (alertMessage != null) {
+        session.removeAttribute("alertMessage");
+        session.removeAttribute("alertType");
+    }
+    
     // 페이지 제목 설정
     request.setAttribute("pageTitle", "수강 과목 - 과제 관리 시스템");
 %>
@@ -55,12 +65,38 @@
     border-color: #c82333;
     color: white;
 }
+
+/* 알림 메시지 스타일 */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.alert-success {
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+    color: #3c763d;
+}
+
+.alert-danger {
+    background-color: #f2dede;
+    border-color: #ebccd1;
+    color: #a94442;
+}
 </style>
 
 <main>
     <section class="content-header">
         <h2><i class="fas fa-list"></i> 수강 과목</h2>
     </section>
+    
+    <% if (alertMessage != null) { %>
+    <section class="alert <%= alertType.equals("success") ? "alert-success" : "alert-danger" %>">
+        <p><i class="fas <%= alertType.equals("success") ? "fa-check-circle" : "fa-exclamation-circle" %>"></i> <%= alertMessage %></p>
+    </section>
+    <% } %>
     
     <section class="enrolled-courses">
         <h3><i class="fas fa-book"></i> 내 수강 과목</h3>
