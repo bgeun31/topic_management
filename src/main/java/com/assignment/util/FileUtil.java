@@ -83,7 +83,17 @@ public class FileUtil {
      */
     public static String getOSUploadPath() {
         
-        String fixedPath = "D:\\uploads";
+        // 로그인 ID 상수 활용
+        String fixedPath;
+        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        
+        if (isWindows) {
+            // Windows 환경 - sskm0116 폴더 추가
+            fixedPath = "D:\\uploads\\" + LOGIN_ID;
+        } else {
+            // Linux 환경
+            fixedPath = "/opt/tomcat/apache-tomcat-10.1.18/webapps/uploads/" + LOGIN_ID;
+        }
         
         System.out.println("고정 업로드 경로 사용: " + fixedPath);
         
@@ -96,9 +106,11 @@ public class FileUtil {
                 System.out.println("폴더를 수동으로 생성해주세요: " + fixedPath);
                 
                 // 문제 해결 지침 출력
-                System.out.println("D:\\uploads 폴더가 없거나 접근할 수 없습니다.");
-                System.out.println("1. D 드라이브에 'uploads' 폴더를 수동으로 생성하세요.");
-                System.out.println("2. 폴더에 모든 사용자 쓰기 권한이 있는지 확인하세요.");
+                if (isWindows) {
+                    System.out.println("D:\\uploads\\" + LOGIN_ID + " 폴더가 없거나 접근할 수 없습니다.");
+                    System.out.println("1. D 드라이브에 'uploads\\" + LOGIN_ID + "' 폴더를 수동으로 생성하세요.");
+                    System.out.println("2. 폴더에 모든 사용자 쓰기 권한이 있는지 확인하세요.");
+                }
             }
         }
         

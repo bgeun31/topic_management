@@ -18,7 +18,7 @@ public class FileServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     
     // 파일이 저장된 기본 경로
-    private static final String UPLOAD_DIRECTORY = "D:\\uploads";
+    private static final String UPLOAD_DIRECTORY = "D:\\uploads\\sskm0116";
     
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
